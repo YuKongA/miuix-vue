@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { MiuixButton, MiuixCard, MiuixInput, useTheme } from '@/index'
+import { MiuixButton, MiuixCard, MiuixInput, MiuixSwitch, useTheme } from '@/index'
 
 const inputValue = ref('')
+const switchA = ref(false)
+const switchB = ref(true)
 
 const { theme, setTheme } = useTheme()
 
@@ -25,6 +27,24 @@ function toggleTheme(): void {
         <MiuixButton type="primary">Primary</MiuixButton>
         <MiuixButton disabled>Disabled</MiuixButton>
         <MiuixButton type="primary" disabled>Primary disabled</MiuixButton>
+      </div>
+    </section>
+
+    <section class="playground__section">
+      <h2>Switch</h2>
+      <div class="row row--align">
+        <label class="switch-row">
+          <MiuixSwitch v-model="switchA" />
+          <span>off → on (drag past 50% or click)</span>
+        </label>
+        <label class="switch-row">
+          <MiuixSwitch v-model="switchB" />
+          <span>currently {{ switchB ? 'on' : 'off' }}</span>
+        </label>
+        <label class="switch-row">
+          <MiuixSwitch v-model="switchA" disabled />
+          <span>disabled</span>
+        </label>
       </div>
     </section>
 
@@ -95,6 +115,18 @@ h1 {
 h2 {
   font-size: var(--m-text-title4-size);
   margin: 0 0 16px;
+}
+
+.row--align {
+  align-items: center;
+}
+
+.switch-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-size: var(--m-text-body1-size);
 }
 
 .echo {
