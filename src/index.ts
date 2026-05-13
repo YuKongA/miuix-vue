@@ -4,5 +4,13 @@
 import './theme/tokens.scss'
 
 export { setTheme, useTheme, type Theme } from './theme'
+export {
+  folmeSpring,
+  folmeSpringByResponse,
+  accelerateEasing,
+  decelerateEasing,
+  sinOutEasing,
+  type EasingFn,
+} from './anim'
 
 export const version = '0.0.0'
