@@ -1,12 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { MiuixButton, MiuixCard, MiuixInput, MiuixSlider, MiuixSwitch, useTheme } from '@/index'
+import {
+  MiuixButton,
+  MiuixCard,
+  MiuixDialog,
+  MiuixInput,
+  MiuixSlider,
+  MiuixSwitch,
+  useTheme,
+} from '@/index'
 
 const inputValue = ref('')
 const switchA = ref(false)
 const switchB = ref(true)
 const sliderValue = ref(35)
 const sliderStepped = ref(20)
+const dialogOpen = ref(false)
 
 const { theme, setTheme } = useTheme()
 
@@ -76,6 +85,23 @@ function toggleTheme(): void {
         <MiuixInput v-model="inputValue" placeholder="Disabled" disabled />
       </div>
       <p class="echo">value: {{ inputValue || '(empty)' }}</p>
+    </section>
+
+    <section class="playground__section">
+      <h2>Dialog</h2>
+      <div class="row">
+        <MiuixButton type="primary" @click="dialogOpen = true">Open dialog</MiuixButton>
+      </div>
+      <MiuixDialog v-model="dialogOpen" title="Demo dialog">
+        <p>
+          spring enter via folmeSpringByResponse(0.9, 0.3) (≈ stiffness 4376), dim with
+          DecelerateEasing(1.5) over 300ms. Click outside or "Cancel" to dismiss.
+        </p>
+        <template #footer="{ close }">
+          <MiuixButton @click="close">Cancel</MiuixButton>
+          <MiuixButton type="primary" @click="close">OK</MiuixButton>
+        </template>
+      </MiuixDialog>
     </section>
 
     <section class="playground__section">

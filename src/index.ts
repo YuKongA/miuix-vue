@@ -15,6 +15,7 @@ export {
 
 export { MiuixButton, type MiuixButtonType } from './components/button'
 export { MiuixCard, type MiuixCardPressFeedback } from './components/card'
+export { MiuixDialog } from './components/dialog'
 export { MiuixInput } from './components/input'
 export { MiuixSlider } from './components/slider'
 export { MiuixSwitch } from './components/switch'
