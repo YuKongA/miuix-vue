@@ -67,8 +67,9 @@ function onClick(event: MouseEvent): void {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 
-  // MiuixIndication alpha overlay: hover 0.06, focus 0.08, press 0.10, sum on combine.
-  // Animated with linear 120ms tween (utils/MiuixIndication.kt).
+  // MiuixIndication alpha overlay: hover 0.06, focus 0.08, press 0.10 — ADDITIVE
+  // when multiple states overlap (utils/MiuixIndication.kt updateStates()).
+  // Animated with linear 120ms tween.
   &::after {
     content: '';
     position: absolute;
@@ -86,11 +87,20 @@ function onClick(event: MouseEvent): void {
   &:focus-visible::after {
     opacity: 0.08;
   }
+  &:hover:focus-visible::after {
+    opacity: 0.14;
+  }
   &:active::after {
     opacity: 0.1;
   }
   &:hover:active::after {
     opacity: 0.16;
+  }
+  &:focus-visible:active::after {
+    opacity: 0.18;
+  }
+  &:hover:focus-visible:active::after {
+    opacity: 0.24;
   }
 
   &--primary {
