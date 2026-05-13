@@ -26,7 +26,7 @@
 
 ## 动画参数表（权威，逐字照抄 miuix）
 
-所有 spring 走 `src/composables/useFolmeSpring.ts` 的 `folmeSpring(dampingRatio, stiffness)`。下表数值**不允许四舍五入、不允许微调**：
+所有 spring 走 `src/anim/folmeSpring.ts` 的 `folmeSpring(dampingRatio, stiffness)`。下表数值**不允许四舍五入、不允许微调**：
 
 | 位置                              | 规格                                              |
 | :-------------------------------- | :------------------------------------------------ |
@@ -73,7 +73,7 @@ Slider 磁吸阈值默认 **0.02**（值域的 2%）。
 | AccelerateEasing | `x^(2*factor)`，默认 factor=1         | factor 可调                      |
 | DecelerateEasing | `1 - (1-x)^(2*factor)`，默认 factor=1 | factor 可调（Dialog dim 用 1.5） |
 | SinOutEasing     | `sin(x * π / 2)`                      | -                                |
-| MiuixEasing      | folmeSpring 的包装                    | 见 `useFolmeSpring.ts`           |
+| MiuixEasing      | folmeSpring 的包装                    | 见 `src/anim/folmeSpring.ts`     |
 
 实现优先级：用 motion-v 的自定义 ease 函数（精度高）；CSS `cubic-bezier()` 近似也接受，但必须保证 `DecelerateEasing(1.5)` 能调 factor。
 
