@@ -244,6 +244,7 @@ function onPointerLeave(): void {
     height: 20.16px;
     border-radius: 50%;
     background: var(--m-color-on-primary);
+    transform-origin: center center;
     pointer-events: none;
   }
 }

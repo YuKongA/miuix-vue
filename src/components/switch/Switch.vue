@@ -160,6 +160,7 @@ function onPointerLeave(): void {
   >
     <Motion
       class="m-switch__thumb"
+      :initial="false"
       :animate="{ x: thumbX, scale: thumbScale }"
       :transition="{
         x: thumbOffsetTransition,
@@ -198,6 +199,7 @@ function onPointerLeave(): void {
     height: 20px;
     border-radius: 50%;
     background: var(--m-color-on-primary);
+    transform-origin: center center;
     pointer-events: none;
   }
 
