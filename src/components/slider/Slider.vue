@@ -16,9 +16,13 @@
 //
 // Animation (1:1 with source):
 //   thumb scale (press/drag/hover):  folmeSpring(0.6, 987) → 1.0 ↔ 1.127
-//   progress (dragging):             folmeSpring(0.9, 1755)
-//   progress (idle / step snap):     folmeSpring(0.96, 322)
 //   track alpha overlay on drag:     tween 150ms, 0 → 0.044 (black)
+//
+// Progress fill width is bound directly via :style (no motion-v wrapper) so
+// the fill tracks the cursor 1:1 during drag with no spring lag. miuix's
+// fill spring (0.9, 1755 dragging / 0.96, 322 idle) is functionally close
+// to instant at those stiffnesses; revisit if visual settle on release
+// reveals a perceptible gap.
 //
 // POC scope: keyPoints + magneticThreshold and VerticalSlider / RangeSlider
 // not yet ported.
@@ -57,8 +61,6 @@ const KNOB_RADIUS = THUMB_RADIUS * 0.72 // 10.08
 const SCALE_ACTIVE = 1.127
 
 const thumbScaleTransition = folmeSpring(0.6, 987)
-const progressIdleTransition = folmeSpring(0.96, 322)
-const progressDragTransition = folmeSpring(0.9, 1755)
 const trackAlphaTransition = { duration: 0.15 }
 
 const trackRef = ref<HTMLElement | null>(null)
@@ -101,10 +103,6 @@ const thumbScale = computed(() => {
   if (pressed.value || hovered.value || isDragging.value) return SCALE_ACTIVE
   return 1
 })
-
-const progressTransition = computed(() =>
-  isDragging.value ? progressDragTransition : progressIdleTransition,
-)
 
 function snapToStep(value: number): number {
   if (props.step <= 0) return value
@@ -178,18 +176,16 @@ function onPointerLeave(): void {
     @pointerenter="onPointerEnter"
     @pointerleave="onPointerLeave"
   >
-    <Motion
-      class="m-slider__fill"
-      :animate="{ width: `${fillWidth}px` }"
-      :transition="progressTransition"
-    />
+    <div class="m-slider__fill" :style="{ width: `${fillWidth}px` }" />
     <Motion
       class="m-slider__drag-overlay"
+      :initial="false"
       :animate="{ opacity: isDragging ? 0.044 : 0 }"
       :transition="trackAlphaTransition"
     />
     <Motion
       class="m-slider__thumb"
+      :initial="false"
       :style="{ left: `${thumbCenterX - KNOB_RADIUS}px` }"
       :animate="{ scale: thumbScale }"
       :transition="thumbScaleTransition"
@@ -225,6 +221,7 @@ function onPointerLeave(): void {
     top: 0;
     bottom: 0;
     left: 0;
+    width: 0; // explicit default — Vue :style binding drives the actual width
     background: var(--m-color-primary);
     border-radius: 9999px;
     pointer-events: none;
