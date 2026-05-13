@@ -18,6 +18,11 @@
 //   thumb scale (press/drag/hover):  folmeSpring(0.6, 987) → 1.0 ↔ 1.127
 //   track alpha overlay on drag:     tween 150ms, 0 → 0.044 (black)
 //
+// Hover only triggers when the *mouse* cursor enters the thumb's hit area:
+//   hitRadius = knobRadius + thumbRadius * 0.5 = 10.08 + 7 = 17.08
+// Touch hover is impossible; touch only fires press/drag (matches source's
+// `change.type != PointerType.Mouse` early-continue).
+//
 // Progress fill width is bound directly via :style (no motion-v wrapper) so
 // the fill tracks the cursor 1:1 during drag with no spring lag. miuix's
 // fill spring (0.9, 1755 dragging / 0.96, 322 idle) is functionally close
@@ -58,6 +63,7 @@ const emit = defineEmits<{
 const TRACK_HEIGHT = 28
 const THUMB_RADIUS = TRACK_HEIGHT / 2 // 14
 const KNOB_RADIUS = THUMB_RADIUS * 0.72 // 10.08
+const THUMB_HIT_RADIUS = KNOB_RADIUS + THUMB_RADIUS * 0.5 // 17.08
 const SCALE_ACTIVE = 1.127
 
 const thumbScaleTransition = folmeSpring(0.6, 987)
@@ -66,7 +72,7 @@ const trackAlphaTransition = { duration: 0.15 }
 const trackRef = ref<HTMLElement | null>(null)
 const trackWidth = ref(0)
 const pressed = ref(false)
-const hovered = ref(false)
+const hoveredThumb = ref(false)
 const isDragging = ref(false)
 let activePointerId: number | null = null
 let resizeObserver: ResizeObserver | null = null
@@ -100,7 +106,7 @@ const fillWidth = computed(() => thumbCenterX.value + THUMB_RADIUS)
 
 const thumbScale = computed(() => {
   if (props.disabled) return 1
-  if (pressed.value || hovered.value || isDragging.value) return SCALE_ACTIVE
+  if (pressed.value || hoveredThumb.value || isDragging.value) return SCALE_ACTIVE
   return 1
 })
 
@@ -127,6 +133,17 @@ function emitValueFromClientX(clientX: number): void {
   }
 }
 
+function updateThumbHover(event: PointerEvent): void {
+  if (props.disabled || event.pointerType !== 'mouse') {
+    hoveredThumb.value = false
+    return
+  }
+  if (!trackRef.value) return
+  const rect = trackRef.value.getBoundingClientRect()
+  const dx = event.clientX - rect.left - thumbCenterX.value
+  hoveredThumb.value = Math.abs(dx) <= THUMB_HIT_RADIUS
+}
+
 function onPointerDown(event: PointerEvent): void {
   if (props.disabled) return
   pressed.value = true
@@ -137,8 +154,11 @@ function onPointerDown(event: PointerEvent): void {
 }
 
 function onPointerMove(event: PointerEvent): void {
-  if (activePointerId !== event.pointerId) return
-  emitValueFromClientX(event.clientX)
+  if (activePointerId === event.pointerId) {
+    emitValueFromClientX(event.clientX)
+    return
+  }
+  updateThumbHover(event)
 }
 
 function onPointerUp(event: PointerEvent): void {
@@ -147,14 +167,11 @@ function onPointerUp(event: PointerEvent): void {
   isDragging.value = false
   activePointerId = null
   ;(event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId)
-}
-
-function onPointerEnter(): void {
-  if (!props.disabled) hovered.value = true
+  updateThumbHover(event)
 }
 
 function onPointerLeave(): void {
-  hovered.value = false
+  hoveredThumb.value = false
 }
 </script>
 
@@ -173,7 +190,6 @@ function onPointerLeave(): void {
     @pointermove="onPointerMove"
     @pointerup="onPointerUp"
     @pointercancel="onPointerUp"
-    @pointerenter="onPointerEnter"
     @pointerleave="onPointerLeave"
   >
     <div class="m-slider__fill" :style="{ width: `${fillWidth}px` }" />
