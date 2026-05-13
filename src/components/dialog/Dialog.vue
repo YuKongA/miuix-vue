@@ -124,11 +124,13 @@ function onBackdropClick(): void {
   &__content {
     display: flex;
     flex-direction: column;
-    max-width: calc(100% - 48px);
+    // DialogDefaults.MaxWidth = 420dp; outsideMargin = 12dp per side → 24 total.
+    max-width: min(420px, calc(100% - 24px));
     max-height: 66.6666%; // windowHeight * 2/3
     border-radius: var(--m-radius-md);
-    background: var(--m-color-surface-container);
-    color: var(--m-color-on-surface-container);
+    // DialogDefaults.backgroundColor() = MiuixTheme.colorScheme.background.
+    background: var(--m-color-background);
+    color: var(--m-color-on-background);
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
     overflow: hidden;
   }
