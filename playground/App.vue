@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MiuixButton, useTheme } from '@/index'
+import { MiuixButton, MiuixCard, useTheme } from '@/index'
 
 const { theme, setTheme } = useTheme()
 
@@ -22,6 +22,21 @@ function toggleTheme(): void {
         <MiuixButton type="primary">Primary</MiuixButton>
         <MiuixButton disabled>Disabled</MiuixButton>
         <MiuixButton type="primary" disabled>Primary disabled</MiuixButton>
+      </div>
+    </section>
+
+    <section class="playground__section">
+      <h2>Card</h2>
+      <div class="row">
+        <MiuixCard class="demo-card">
+          <p>Static card (no press feedback).</p>
+        </MiuixCard>
+        <MiuixCard press-feedback="sink" class="demo-card">
+          <p>Press me — sinks to 0.94 with folmeSpring(0.8, 600).</p>
+        </MiuixCard>
+        <MiuixCard press-feedback="tilt" class="demo-card">
+          <p>Press a corner — tilts ±8° with folmeSpring(0.6, 400).</p>
+        </MiuixCard>
       </div>
     </section>
   </main>
@@ -67,5 +82,18 @@ h1 {
 h2 {
   font-size: var(--m-text-title4-size);
   margin: 0 0 16px;
+}
+
+.demo-card {
+  width: 220px;
+
+  .m-card {
+    padding: 16px;
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--m-text-body1-size);
+  }
 }
 </style>
