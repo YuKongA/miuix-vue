@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { MiuixButton, MiuixCard, MiuixInput, MiuixSwitch, useTheme } from '@/index'
+import { MiuixButton, MiuixCard, MiuixInput, MiuixSlider, MiuixSwitch, useTheme } from '@/index'
 
 const inputValue = ref('')
 const switchA = ref(false)
 const switchB = ref(true)
+const sliderValue = ref(35)
+const sliderStepped = ref(20)
 
 const { theme, setTheme } = useTheme()
 
@@ -27,6 +29,24 @@ function toggleTheme(): void {
         <MiuixButton type="primary">Primary</MiuixButton>
         <MiuixButton disabled>Disabled</MiuixButton>
         <MiuixButton type="primary" disabled>Primary disabled</MiuixButton>
+      </div>
+    </section>
+
+    <section class="playground__section">
+      <h2>Slider</h2>
+      <div class="stack">
+        <div class="slider-row">
+          <MiuixSlider v-model="sliderValue" />
+          <span class="echo">value: {{ Math.round(sliderValue) }}</span>
+        </div>
+        <div class="slider-row">
+          <MiuixSlider v-model="sliderStepped" :step="10" />
+          <span class="echo">stepped (step=10): {{ sliderStepped }}</span>
+        </div>
+        <div class="slider-row">
+          <MiuixSlider v-model="sliderValue" disabled />
+          <span class="echo">disabled</span>
+        </div>
       </div>
     </section>
 
@@ -115,6 +135,19 @@ h1 {
 h2 {
   font-size: var(--m-text-title4-size);
   margin: 0 0 16px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.slider-row {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  align-items: center;
+  gap: 16px;
 }
 
 .row--align {
