@@ -13,4 +13,6 @@ export {
   type EasingFn,
 } from './anim'
 
+export { MiuixButton, type MiuixButtonType } from './components/button'
+
 export const version = '0.0.0'
