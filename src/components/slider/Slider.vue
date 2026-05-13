@@ -2,23 +2,29 @@
 // Copyright 2026, miuix-vue contributors
 // SPDX-License-Identifier: Apache-2.0
 //
-// Ported from miuix-ui/.../basic/Slider.kt (POC subset).
+// Ported from miuix-ui/.../basic/Slider.kt.
 //
-// Springs (1:1 with source):
-//   thumb scale (press/drag/hover): folmeSpring(0.6, 987) → 1.0 ↔ 1.127
-//   progress idle (snap):           folmeSpring(0.96, 322)
-//   progress dragging:              folmeSpring(0.9, 1755)
+// Geometry (1:1 with Canvas math in SliderTrack):
+//   barHeight    = SliderDefaults.MinHeight = 28
+//   thumbRadius  = barHeight / 2            = 14
+//   knobRadius   = thumbRadius * 0.72       = 10.08  (visible thumb)
+//   availableW   = barWidth - 2 * thumbRadius        (thumb travel range)
+//   thumbCenter  = thumbRadius + fraction * availableW
+// Fill is drawn as a line with strokeWidth = barHeight + cap = Round, so the
+// visible right edge of the fill is thumbCenter + thumbRadius (the cap adds
+// thumbRadius of half-circle past the line endpoint).
 //
-// POC scope:
-//   - v-model + min + max + step + disabled
-//   - Track height 28, thumb diameter 28 (matches track height for capsule fit)
-//   - Pointer-driven drag + click-to-position
+// Animation (1:1 with source):
+//   thumb scale (press/drag/hover):  folmeSpring(0.6, 987) → 1.0 ↔ 1.127
+//   progress (dragging):             folmeSpring(0.9, 1755)
+//   progress (idle / step snap):     folmeSpring(0.96, 322)
+//   track alpha overlay on drag:     tween 150ms, 0 → 0.044 (black)
 //
-// MVP TODO: keyPoints + magnetic snap (0.02 default), reverseDirection,
-//           VerticalSlider, RangeSlider, trackAlpha overlay on drag.
+// POC scope: keyPoints + magneticThreshold and VerticalSlider / RangeSlider
+// not yet ported.
 
 import { Motion } from 'motion-v'
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { folmeSpring } from '../../anim'
 
 defineOptions({ name: 'MiuixSlider' })
@@ -44,24 +50,51 @@ const emit = defineEmits<{
   change: [value: number]
 }>()
 
+// Dimensions from SliderDefaults + SliderTrack Canvas math.
+const TRACK_HEIGHT = 28
+const THUMB_RADIUS = TRACK_HEIGHT / 2 // 14
+const KNOB_RADIUS = THUMB_RADIUS * 0.72 // 10.08
 const SCALE_ACTIVE = 1.127
 
 const thumbScaleTransition = folmeSpring(0.6, 987)
 const progressIdleTransition = folmeSpring(0.96, 322)
 const progressDragTransition = folmeSpring(0.9, 1755)
+const trackAlphaTransition = { duration: 0.15 }
 
 const trackRef = ref<HTMLElement | null>(null)
+const trackWidth = ref(0)
 const pressed = ref(false)
 const hovered = ref(false)
 const isDragging = ref(false)
 let activePointerId: number | null = null
+let resizeObserver: ResizeObserver | null = null
+
+onMounted(() => {
+  if (!trackRef.value) return
+  trackWidth.value = trackRef.value.getBoundingClientRect().width
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      if (trackRef.value) trackWidth.value = trackRef.value.getBoundingClientRect().width
+    })
+    resizeObserver.observe(trackRef.value)
+  }
+})
+
+onUnmounted(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
+})
 
 const range = computed(() => props.max - props.min)
 const fraction = computed(() => {
   if (range.value <= 0) return 0
-  const f = (props.modelValue - props.min) / range.value
-  return Math.max(0, Math.min(1, f))
+  return Math.max(0, Math.min(1, (props.modelValue - props.min) / range.value))
 })
+
+const availableWidth = computed(() => Math.max(0, trackWidth.value - 2 * THUMB_RADIUS))
+const thumbCenterX = computed(() => THUMB_RADIUS + fraction.value * availableWidth.value)
+// Round line cap extends visible fill past thumbCenter by thumbRadius.
+const fillWidth = computed(() => thumbCenterX.value + THUMB_RADIUS)
 
 const thumbScale = computed(() => {
   if (props.disabled) return 1
@@ -80,11 +113,14 @@ function snapToStep(value: number): number {
 }
 
 function emitValueFromClientX(clientX: number): void {
-  const track = trackRef.value
-  if (!track) return
-  const rect = track.getBoundingClientRect()
-  const f = (clientX - rect.left) / rect.width
-  const raw = props.min + Math.max(0, Math.min(1, f)) * range.value
+  if (!trackRef.value) return
+  const rect = trackRef.value.getBoundingClientRect()
+  // Map clientX into the available drag region [thumbRadius, trackWidth - thumbRadius].
+  const localX = clientX - rect.left
+  const usable = availableWidth.value
+  const x = Math.max(0, Math.min(usable, localX - THUMB_RADIUS))
+  const f = usable > 0 ? x / usable : 0
+  const raw = props.min + f * range.value
   const next = snapToStep(raw)
   const clamped = Math.max(props.min, Math.min(props.max, next))
   if (clamped !== props.modelValue) {
@@ -144,12 +180,17 @@ function onPointerLeave(): void {
   >
     <Motion
       class="m-slider__fill"
-      :animate="{ width: `${fraction * 100}%` }"
+      :animate="{ width: `${fillWidth}px` }"
       :transition="progressTransition"
     />
     <Motion
+      class="m-slider__drag-overlay"
+      :animate="{ opacity: isDragging ? 0.044 : 0 }"
+      :transition="trackAlphaTransition"
+    />
+    <Motion
       class="m-slider__thumb"
-      :style="{ left: `${fraction * 100}%` }"
+      :style="{ left: `${thumbCenterX - KNOB_RADIUS}px` }"
       :animate="{ scale: thumbScale }"
       :transition="thumbScaleTransition"
     />
@@ -161,7 +202,7 @@ function onPointerLeave(): void {
   position: relative;
   display: block;
   width: 100%;
-  height: 28px; // SliderDefaults.MinHeight
+  height: 28px;
   border-radius: 9999px;
   background: var(--m-color-slider-background);
   cursor: pointer;
@@ -185,18 +226,27 @@ function onPointerLeave(): void {
     bottom: 0;
     left: 0;
     background: var(--m-color-primary);
+    border-radius: 9999px;
+    pointer-events: none;
+  }
+
+  // Mirrors SliderTrack's drawRect(Color.Black, alpha) during isDragging.
+  &__drag-overlay {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    opacity: 0;
     pointer-events: none;
   }
 
   &__thumb {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 28px;
-    margin-left: -14px;
+    // Track 28 - knob 20.16 = 7.84 of vertical space → 3.92 above and below.
+    top: 3.92px;
+    width: 20.16px;
+    height: 20.16px;
     border-radius: 50%;
     background: var(--m-color-on-primary);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     pointer-events: none;
   }
 }
