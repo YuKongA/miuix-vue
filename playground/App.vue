@@ -125,8 +125,8 @@ function toggleTheme(): void {
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: var(--m-color-background);
-  color: var(--m-color-on-background);
+  background: var(--m-color-surface);
+  color: var(--m-color-on-surface);
 }
 
 .playground {
