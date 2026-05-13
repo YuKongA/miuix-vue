@@ -1,54 +1,105 @@
 # miuix-vue
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 port of [miuix](https://github.com/YuKongA/miuix)'s visual and animation design language, for the Web.
 
-## Recommended IDE Setup
+Status: **POC**. 6 components, 1:1 with miuix source for every spring, dimension, and easing.
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## What's in the box
 
-## Recommended Browser Setup
+| Component       | What it does                                                                              |
+| :-------------- | :---------------------------------------------------------------------------------------- |
+| `MiuixButton`   | `default` / `primary` variants, MiuixIndication alpha overlay on hover/focus/press        |
+| `MiuixCard`     | `none` / `sink` / `tilt` press feedback with folmeSpring(0.8, 600) and folmeSpring(0.6, 400) |
+| `MiuixInput`    | v-model input, focus border 0 → 2px in primary color                                      |
+| `MiuixSwitch`   | drag + click toggle, three springs (offset / scale / track color), 50% snap threshold     |
+| `MiuixSlider`   | drag + tap to position, folmeSpring(0.6, 987) thumb scale, two progress springs           |
+| `MiuixDialog`   | Teleport + spring enter via folmeSpringByResponse(0.9, 0.3), DecelerateEasing(1.5) dim    |
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+Plus:
 
-## Type Support for `.vue` Imports in TS
+- `setTheme('light' \| 'dark')` and `useTheme()` for theming
+- `folmeSpring(dampingRatio, stiffness)` + `folmeSpringByResponse(damping, response)` helpers
+- `accelerateEasing` / `decelerateEasing` / `sinOutEasing` ports of miuix custom easings
+- 53 color tokens and 14 text-style tokens as CSS variables (light + dark)
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+## Installation
 
-## Customize configuration
+```sh
+bun add miuix-vue motion-v
+# peers: vue >= 3.4, motion-v >= 2
+```
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+## Usage
 
-## Project Setup
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { MiuixButton, MiuixSwitch, MiuixDialog, setTheme } from 'miuix-vue'
+import 'miuix-vue/style.css'
+
+const checked = ref(false)
+const open = ref(false)
+</script>
+
+<template>
+  <MiuixSwitch v-model="checked" />
+  <MiuixButton type="primary" @click="open = true">Open</MiuixButton>
+  <MiuixDialog v-model="open" title="Hello">
+    <p>Body content.</p>
+    <template #footer="{ close }">
+      <MiuixButton @click="close">Cancel</MiuixButton>
+      <MiuixButton type="primary" @click="close">OK</MiuixButton>
+    </template>
+  </MiuixDialog>
+</template>
+```
+
+### Theming
+
+Two themes ship out of the box, light and dark:
+
+```ts
+import { setTheme } from 'miuix-vue'
+setTheme('dark')
+```
+
+All tokens are CSS variables under `:root` (light) and `.m-theme-dark`. Override globally or per-instance:
+
+```vue
+<MiuixButton type="primary" style="--m-color-primary: #ff5b8a"> Custom </MiuixButton>
+```
+
+### Animation helpers
+
+```ts
+import { folmeSpring, folmeSpringByResponse, decelerateEasing } from 'miuix-vue'
+
+// Compose's spring(dampingRatio=0.7, stiffness=987) becomes:
+folmeSpring(0.7, 987) // { type: 'spring', stiffness: 987, damping: ≈43.98, mass: 1 }
+
+// Compose's folmeSpring(damping=0.9, response=0.3s) becomes:
+folmeSpringByResponse(0.9, 0.3) // stiffness = (2π / 0.3)² ≈ 4376
+
+// 4 custom easings, pass `decelerateEasing(1.5)` to motion-v's transition.ease
+decelerateEasing(1.5)
+```
+
+## Development
 
 ```sh
 bun install
+bun run dev # playground at http://localhost:5173
+bun run build # library build to dist/
+bun run lint
+bun run format
 ```
 
-### Compile and Hot-Reload for Development
+Project rules (1:1 visual parity, API conventions, Bun-only) are in [CLAUDE.md](./CLAUDE.md).
 
-```sh
-bun dev
-```
+## Why this exists
 
-### Type-Check, Compile and Minify for Production
+miuix's interaction language — spring-based, not duration-based — feels distinct on Compose Android/Desktop. This package validates whether that feel survives the trip to Web/Vue. Every spring constant, every dp dimension, every easing curve traces back to a line in `miuix-ui/src/commonMain/`.
 
-```sh
-bun run build
-```
+## License
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
-bun test:unit
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-bun lint
-```
+Apache-2.0
