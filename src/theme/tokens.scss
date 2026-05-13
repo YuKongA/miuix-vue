@@ -1,0 +1,184 @@
+// Copyright 2026, miuix-vue contributors
+// SPDX-License-Identifier: Apache-2.0
+//
+// Design tokens copied 1:1 from miuix Colors.kt and TextStyles.kt.
+// Source: miuix-ui/src/commonMain/kotlin/top/yukonga/miuix/kmp/theme/
+
+:root {
+  // ---- Color tokens (light) ----
+  // Primary
+  --m-color-primary: #3482ff;
+  --m-color-on-primary: #ffffff;
+  --m-color-primary-variant: #3482ff;
+  --m-color-on-primary-variant: #aecdff;
+
+  // Error
+  --m-color-error: #e94634;
+  --m-color-on-error: #ffffff;
+  --m-color-error-container: #fdf6f4;
+  --m-color-on-error-container: #410002;
+
+  // Disabled primary family
+  --m-color-disabled-primary: #c2d9ff;
+  --m-color-disabled-on-primary: #f3f8ff;
+  --m-color-disabled-primary-button: #c2d9ff;
+  --m-color-disabled-on-primary-button: #ffffff;
+  --m-color-disabled-primary-slider: #b8cff5;
+
+  // Primary containers
+  --m-color-primary-container: #5d9bff;
+  --m-color-on-primary-container: #ffffff;
+
+  // Secondary
+  --m-color-secondary: #e6e6e6;
+  --m-color-on-secondary: #ffffff;
+  --m-color-secondary-variant: #f0f0f0;
+  --m-color-on-secondary-variant: #303030;
+
+  // Disabled secondary
+  --m-color-disabled-secondary: #f0f0f0;
+  --m-color-disabled-on-secondary: #fcfcfc;
+  --m-color-disabled-secondary-variant: #f2f2f2;
+  --m-color-disabled-on-secondary-variant: #b2b2b2;
+
+  // Secondary containers
+  --m-color-secondary-container: #f0f0f0;
+  --m-color-on-secondary-container: #a9a9a9;
+  --m-color-secondary-container-variant: #f0f0f0;
+  --m-color-on-secondary-container-variant: #a8a8a8;
+
+  // Tertiary container
+  --m-color-tertiary-container: #eaf2ff;
+  --m-color-on-tertiary-container: #3482ff;
+  --m-color-tertiary-container-variant: #eaf2ff;
+
+  // Background
+  --m-color-background: #ffffff;
+  --m-color-on-background: #000000;
+  --m-color-on-background-variant: #8c93b0;
+
+  // Surface family
+  --m-color-surface: #f7f7f7;
+  --m-color-on-surface: #000000;
+  --m-color-surface-variant: #ffffff;
+  --m-color-on-surface-secondary: #000000cc;
+  --m-color-on-surface-variant-summary: #00000099;
+  --m-color-on-surface-variant-actions: #00000066;
+  --m-color-disabled-on-surface: #b2b2b2;
+  --m-color-surface-container: #ffffff;
+  --m-color-on-surface-container: #000000;
+  --m-color-on-surface-container-variant: #959595;
+  --m-color-surface-container-high: #e8e8e8;
+  --m-color-on-surface-container-high: #a2a2a2;
+  --m-color-surface-container-highest: #e8e8e8;
+  --m-color-on-surface-container-highest: #000000;
+
+  // Outline / divider / dimming
+  --m-color-outline: #d9d9d9;
+  --m-color-divider-line: #e0e0e0;
+  --m-color-window-dimming: rgba(0, 0, 0, 0.3);
+
+  // Slider
+  --m-color-slider-key-point: #a3b3cd4d;
+  --m-color-slider-key-point-foreground: #6eb5ff;
+  --m-color-slider-background: #0000000f;
+
+  // ---- Text style tokens ----
+  // 1dp = 1px @ 1x DPR. Compose .sp maps to logical pixels here.
+  --m-text-main-size: 17px;
+
+  --m-text-paragraph-size: 17px;
+  --m-text-paragraph-line-height: 1.2;
+
+  --m-text-body1-size: 16px;
+  --m-text-body2-size: 14px;
+
+  --m-text-button-size: 17px;
+
+  --m-text-footnote1-size: 13px;
+  --m-text-footnote2-size: 11px;
+
+  --m-text-headline1-size: 17px;
+  --m-text-headline2-size: 16px;
+
+  --m-text-subtitle-size: 14px;
+  --m-text-subtitle-weight: 700;
+
+  --m-text-title1-size: 32px;
+  --m-text-title2-size: 24px;
+  --m-text-title3-size: 20px;
+  --m-text-title4-size: 18px;
+
+  // ---- Radius tokens ----
+  // miuix uses cornerRadius=16 across Button / Card / Surface / TextField / Dialog.
+  --m-radius-md: 16px;
+  --m-radius-full: 9999px;
+}
+
+.m-theme-dark {
+  // ---- Color tokens (dark) ----
+  --m-color-primary: #277af7;
+  --m-color-on-primary: #ffffff;
+  --m-color-primary-variant: #0073dd;
+  --m-color-on-primary-variant: #99c7f1;
+
+  --m-color-error: #f12522;
+  --m-color-on-error: #ffffff;
+  --m-color-error-container: #2e0603;
+  --m-color-on-error-container: #ffdad6;
+
+  --m-color-disabled-primary: #253e64;
+  --m-color-disabled-on-primary: #677993;
+  --m-color-disabled-primary-button: #253e64;
+  --m-color-disabled-on-primary-button: #677893;
+  --m-color-disabled-primary-slider: #44587c;
+
+  --m-color-primary-container: #338fe4;
+  --m-color-on-primary-container: #ffffff;
+
+  --m-color-secondary: #505050;
+  --m-color-on-secondary: #ffffff;
+  --m-color-secondary-variant: #434343;
+  --m-color-on-secondary-variant: #d9d9d9;
+
+  --m-color-disabled-secondary: #3f3f3f;
+  --m-color-disabled-on-secondary: #797979;
+  --m-color-disabled-secondary-variant: #404040;
+  --m-color-disabled-on-secondary-variant: #707170;
+
+  --m-color-secondary-container: #434343;
+  --m-color-on-secondary-container: #7c7c7c;
+  --m-color-secondary-container-variant: #4f4f4f;
+  --m-color-on-secondary-container-variant: #959595;
+
+  --m-color-tertiary-container: #2b3b54;
+  --m-color-on-tertiary-container: #4788ff;
+  --m-color-tertiary-container-variant: #505050;
+
+  --m-color-background: #242424;
+  --m-color-on-background: #ffffffe6;
+  --m-color-on-background-variant: #787e96;
+
+  --m-color-surface: #000000;
+  --m-color-on-surface: #f2f2f2;
+  --m-color-surface-variant: #242424;
+  --m-color-on-surface-secondary: #ffffffcc;
+  --m-color-on-surface-variant-summary: #ffffff80;
+  --m-color-on-surface-variant-actions: #ffffff66;
+  --m-color-disabled-on-surface: #666666;
+  --m-color-surface-container: #242424;
+  --m-color-on-surface-container: #ffffffe6;
+  --m-color-on-surface-container-variant: #737373;
+  --m-color-surface-container-high: #242424;
+  --m-color-on-surface-container-high: #666666;
+  --m-color-surface-container-highest: #2d2d2d;
+  --m-color-on-surface-container-highest: #e9e9e9;
+
+  --m-color-outline: #404040;
+  --m-color-divider-line: #393939;
+  --m-color-window-dimming: rgba(0, 0, 0, 0.6);
+
+  --m-color-slider-key-point: #7a8aa64d;
+  --m-color-slider-key-point-foreground: #5daaff;
+  --m-color-slider-background: #ffffff26;
+}

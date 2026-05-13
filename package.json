@@ -21,7 +21,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/miuix-vue.js",
       "require": "./dist/miuix-vue.cjs"
-    }
+    },
+    "./style.css": "./dist/miuix-vue.css"
   },
   "files": [
     "dist"
