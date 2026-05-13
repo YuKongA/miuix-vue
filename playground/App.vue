@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { MiuixButton, MiuixCard, useTheme } from '@/index'
+import { ref } from 'vue'
+import { MiuixButton, MiuixCard, MiuixInput, useTheme } from '@/index'
+
+const inputValue = ref('')
 
 const { theme, setTheme } = useTheme()
 
@@ -23,6 +26,16 @@ function toggleTheme(): void {
         <MiuixButton disabled>Disabled</MiuixButton>
         <MiuixButton type="primary" disabled>Primary disabled</MiuixButton>
       </div>
+    </section>
+
+    <section class="playground__section">
+      <h2>Input</h2>
+      <div class="row">
+        <MiuixInput v-model="inputValue" placeholder="Type something..." />
+        <MiuixInput v-model="inputValue" placeholder="Read only" readonly />
+        <MiuixInput v-model="inputValue" placeholder="Disabled" disabled />
+      </div>
+      <p class="echo">value: {{ inputValue || '(empty)' }}</p>
     </section>
 
     <section class="playground__section">
@@ -82,6 +95,12 @@ h1 {
 h2 {
   font-size: var(--m-text-title4-size);
   margin: 0 0 16px;
+}
+
+.echo {
+  margin: 12px 0 0;
+  font-size: var(--m-text-footnote1-size);
+  color: var(--m-color-on-surface-variant-summary);
 }
 
 .demo-card {
