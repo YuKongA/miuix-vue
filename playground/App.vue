@@ -5,6 +5,7 @@ import {
   MiuixCard,
   MiuixDialog,
   MiuixInput,
+  MiuixRangeSlider,
   MiuixSlider,
   MiuixSwitch,
   useTheme,
@@ -15,6 +16,11 @@ const switchA = ref(false)
 const switchB = ref(true)
 const sliderValue = ref(35)
 const sliderStepped = ref(20)
+const sliderKeyPoints = ref(35)
+const sliderVertical = ref(60)
+const sliderVerticalReverse = ref(40)
+const sliderRange = ref<[number, number]>([20, 70])
+const sliderRangeStepped = ref<[number, number]>([20, 60])
 const dialogOpen = ref(false)
 
 const { theme, setTheme } = useTheme()
@@ -55,6 +61,54 @@ function toggleTheme(): void {
         <div class="slider-row">
           <MiuixSlider v-model="sliderValue" disabled />
           <span class="echo">disabled</span>
+        </div>
+        <div class="slider-row">
+          <MiuixSlider
+            v-model="sliderKeyPoints"
+            :key-points="[0, 25, 50, 75, 100]"
+            :magnet-threshold="0.04"
+          />
+          <span class="echo">key-points + magnet (0.04): {{ Math.round(sliderKeyPoints) }}</span>
+        </div>
+        <div class="slider-row">
+          <MiuixSlider v-model="sliderStepped" :step="10" show-key-points />
+          <span class="echo">stepped + show-key-points: {{ sliderStepped }}</span>
+        </div>
+        <div class="slider-row slider-row--vertical">
+          <div class="vertical-pair">
+            <MiuixSlider
+              v-model="sliderVertical"
+              orientation="vertical"
+              :step="10"
+              show-key-points
+            />
+            <MiuixSlider
+              v-model="sliderVerticalReverse"
+              orientation="vertical"
+              reverse-direction
+              :step="10"
+              show-key-points
+            />
+          </div>
+          <span class="echo"
+            >vertical: {{ sliderVertical }} | reverse: {{ sliderVerticalReverse }}</span
+          >
+        </div>
+      </div>
+    </section>
+
+    <section class="playground__section">
+      <h2>RangeSlider</h2>
+      <div class="stack">
+        <div class="slider-row">
+          <MiuixRangeSlider v-model="sliderRange" />
+          <span class="echo">range: [{{ sliderRange[0] }}, {{ sliderRange[1] }}]</span>
+        </div>
+        <div class="slider-row">
+          <MiuixRangeSlider v-model="sliderRangeStepped" :step="10" show-key-points />
+          <span class="echo"
+            >stepped: [{{ sliderRangeStepped[0] }}, {{ sliderRangeStepped[1] }}]</span
+          >
         </div>
       </div>
     </section>
@@ -171,9 +225,19 @@ h2 {
 
 .slider-row {
   display: grid;
-  grid-template-columns: 1fr 160px;
+  grid-template-columns: 1fr 220px;
   align-items: center;
   gap: 16px;
+
+  &--vertical {
+    align-items: start;
+  }
+}
+
+.vertical-pair {
+  display: flex;
+  gap: 24px;
+  height: 200px;
 }
 
 .row--align {

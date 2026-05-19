@@ -2,41 +2,48 @@
 // Copyright 2026, miuix-vue contributors
 // SPDX-License-Identifier: Apache-2.0
 //
-// Ported from miuix-ui/.../basic/Slider.kt.
+// Ported from miuix-ui/.../basic/Slider.kt (Slider + VerticalSlider, unified
+// here via `orientation` per Vue idiom — see CLAUDE.md rule #2).
 //
 // Geometry (1:1 with Canvas math in SliderTrack):
-//   barHeight    = SliderDefaults.MinHeight = 28
-//   thumbRadius  = barHeight / 2            = 14
-//   knobRadius   = thumbRadius * 0.72       = 10.08  (visible thumb)
-//   availableW   = barWidth - 2 * thumbRadius        (thumb travel range)
-//   thumbCenter  = thumbRadius + fraction * availableW
-// Fill is drawn as a line with strokeWidth = barHeight + cap = Round, so the
-// visible right edge of the fill is thumbCenter + thumbRadius (the cap adds
-// thumbRadius of half-circle past the line endpoint).
+//   trackThickness = SliderDefaults.MinHeight = 28
+//   thumbRadius    = trackThickness / 2       = 14
+//   knobRadius     = thumbRadius * 0.72       = 10.08  (visible thumb)
+//   knobOffset     = thumbRadius - knobRadius = 3.92   (centers knob in track)
+//   availableLen   = trackLen - 2 * thumbRadius        (thumb travel range)
+//   thumbCenter    = thumbRadius + effectiveFraction * availableLen
+// Fill is a Canvas line with stroke = trackThickness + Round caps, so the
+// visible fill extends past the line endpoint by thumbRadius (clipped by the
+// rounded track shape).
 //
 // Animation (1:1 with source):
+//   progress value (drag):           folmeSpring(0.9, 1755)
+//   progress value (idle / settle):  folmeSpring(0.96, 322)
 //   thumb scale (press/drag/hover):  folmeSpring(0.6, 987) → 1.0 ↔ 1.127
 //   track alpha overlay on drag:     tween 150ms, 0 → 0.044 (black)
 //
+// Snap behavior:
+//   step > 0       → hard snap to step (HTML <input type=range> idiom).
+//                    miuix's `steps: Int` (count between endpoints) is
+//                    re-expressed as `step: number` (size) per CLAUDE.md #2.
+//   keyPoints set  → magnetic soft snap if within magnetThreshold (default 2%).
+//                    Source treats `keyPoints` and `steps` as independent; the
+//                    Vue port mirrors that — `step` wins over `keyPoints` for
+//                    snap behavior, matching `resolveValueFromFraction`.
+//   else           → continuous.
+//
 // Hover only triggers when the *mouse* cursor enters the thumb's hit area:
-//   hitRadius = knobRadius + thumbRadius * 0.5 = 10.08 + 7 = 17.08
+//   hitRadius = knobRadius + thumbRadius * 0.5 = 17.08
 // Touch hover is impossible; touch only fires press/drag (matches source's
 // `change.type != PointerType.Mouse` early-continue).
-//
-// Progress fill width is bound directly via :style (no motion-v wrapper) so
-// the fill tracks the cursor 1:1 during drag with no spring lag. miuix's
-// fill spring (0.9, 1755 dragging / 0.96, 322 idle) is functionally close
-// to instant at those stiffnesses; revisit if visual settle on release
-// reveals a perceptible gap.
-//
-// POC scope: keyPoints + magneticThreshold and VerticalSlider / RangeSlider
-// not yet ported.
 
-import { Motion } from 'motion-v'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { animate, Motion, motionValue } from 'motion-v'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { folmeSpring } from '../../anim'
 
 defineOptions({ name: 'MiuixSlider' })
+
+type Orientation = 'horizontal' | 'vertical'
 
 interface Props {
   modelValue?: number
@@ -44,6 +51,11 @@ interface Props {
   max?: number
   step?: number
   disabled?: boolean
+  orientation?: Orientation
+  reverseDirection?: boolean
+  showKeyPoints?: boolean
+  keyPoints?: number[]
+  magnetThreshold?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -52,38 +64,102 @@ const props = withDefaults(defineProps<Props>(), {
   max: 100,
   step: 0,
   disabled: false,
+  orientation: 'horizontal',
+  reverseDirection: false,
+  showKeyPoints: false,
+  keyPoints: () => [],
+  magnetThreshold: 0.02,
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: number]
   change: [value: number]
+  'change-end': []
 }>()
 
-// Dimensions from SliderDefaults + SliderTrack Canvas math.
-const TRACK_HEIGHT = 28
-const THUMB_RADIUS = TRACK_HEIGHT / 2 // 14
+const TRACK_THICKNESS = 28
+const THUMB_RADIUS = TRACK_THICKNESS / 2 // 14
 const KNOB_RADIUS = THUMB_RADIUS * 0.72 // 10.08
+const KNOB_OFFSET = THUMB_RADIUS - KNOB_RADIUS // 3.92
 const THUMB_HIT_RADIUS = KNOB_RADIUS + THUMB_RADIUS * 0.5 // 17.08
+const KEYPOINT_RADIUS = TRACK_THICKNESS / 7.5 // ≈3.733  (source: barHeight / 7.5)
 const SCALE_ACTIVE = 1.127
 
 const thumbScaleTransition = folmeSpring(0.6, 987)
 const trackAlphaTransition = { duration: 0.15 }
+const progressDraggingSpec = folmeSpring(0.9, 1755)
+const progressIdleSpec = folmeSpring(0.96, 322)
+
+const isVertical = computed(() => props.orientation === 'vertical')
 
 const trackRef = ref<HTMLElement | null>(null)
-const trackWidth = ref(0)
+const trackLength = ref(0)
 const pressed = ref(false)
 const hoveredThumb = ref(false)
 const isDragging = ref(false)
 let activePointerId: number | null = null
 let resizeObserver: ResizeObserver | null = null
 
+const coercedValue = computed(() => Math.max(props.min, Math.min(props.max, props.modelValue)))
+const range = computed(() => props.max - props.min)
+
+const stepFractions = computed<number[]>(() => {
+  if (props.step <= 0 || range.value <= 0) return []
+  const out: number[] = []
+  const eps = props.step * 1e-6
+  for (let v = props.min; v <= props.max + eps; v += props.step) {
+    out.push(Math.max(0, Math.min(1, (v - props.min) / range.value)))
+  }
+  return out
+})
+
+const customKeyFractions = computed<number[]>(() => {
+  if (!props.keyPoints || props.keyPoints.length === 0 || range.value <= 0) return []
+  return props.keyPoints.map((v) => Math.max(0, Math.min(1, (v - props.min) / range.value)))
+})
+
+// Visible ticks: keyPoints override step ticks; showKeyPoints toggles step ticks.
+// Matches `computeKeyPointFractions` in source.
+const visibleKeyFractions = computed<number[]>(() => {
+  if (customKeyFractions.value.length > 0) return customKeyFractions.value
+  if (props.showKeyPoints) return stepFractions.value
+  return []
+})
+
+// Magnetic snap targets: only when `keyPoints` is set (matches `step > 0` vs
+// `keyPoints != null` branches in `resolveValueFromFraction`).
+const magnetFractions = computed<number[]>(() => customKeyFractions.value)
+
+const animatedValueMv = motionValue(coercedValue.value)
+const animatedValue = ref(coercedValue.value)
+const unsubscribeAnimatedValue = animatedValueMv.on('change', (v: number) => {
+  animatedValue.value = v
+})
+let currentProgressAnim: { stop: () => void } | null = null
+
+function retargetProgress(target: number, dragging: boolean): void {
+  currentProgressAnim?.stop()
+  currentProgressAnim = animate(
+    animatedValueMv,
+    target,
+    dragging ? progressDraggingSpec : progressIdleSpec,
+  )
+}
+
+watch(coercedValue, (v) => retargetProgress(v, isDragging.value))
+watch(isDragging, (d) => retargetProgress(coercedValue.value, d))
+
+function measureTrack(): void {
+  if (!trackRef.value) return
+  const rect = trackRef.value.getBoundingClientRect()
+  trackLength.value = isVertical.value ? rect.height : rect.width
+}
+
 onMounted(() => {
   if (!trackRef.value) return
-  trackWidth.value = trackRef.value.getBoundingClientRect().width
+  measureTrack()
   if (typeof ResizeObserver !== 'undefined') {
-    resizeObserver = new ResizeObserver(() => {
-      if (trackRef.value) trackWidth.value = trackRef.value.getBoundingClientRect().width
-    })
+    resizeObserver = new ResizeObserver(() => measureTrack())
     resizeObserver.observe(trackRef.value)
   }
 })
@@ -91,18 +167,74 @@ onMounted(() => {
 onUnmounted(() => {
   resizeObserver?.disconnect()
   resizeObserver = null
+  currentProgressAnim?.stop()
+  unsubscribeAnimatedValue()
 })
 
-const range = computed(() => props.max - props.min)
+watch(isVertical, measureTrack)
+
 const fraction = computed(() => {
   if (range.value <= 0) return 0
-  return Math.max(0, Math.min(1, (props.modelValue - props.min) / range.value))
+  return Math.max(0, Math.min(1, (animatedValue.value - props.min) / range.value))
 })
 
-const availableWidth = computed(() => Math.max(0, trackWidth.value - 2 * THUMB_RADIUS))
-const thumbCenterX = computed(() => THUMB_RADIUS + fraction.value * availableWidth.value)
-// Round line cap extends visible fill past thumbCenter by thumbRadius.
-const fillWidth = computed(() => thumbCenterX.value + THUMB_RADIUS)
+const availableLen = computed(() => Math.max(0, trackLength.value - 2 * THUMB_RADIUS))
+
+// Vertical default = bottom-to-top, so fraction=1 sits at the top (y=thumbRadius).
+const effectiveFraction = computed(() => {
+  const f = fraction.value
+  if (isVertical.value) return props.reverseDirection ? f : 1 - f
+  return props.reverseDirection ? 1 - f : f
+})
+
+const thumbCenter = computed(() => THUMB_RADIUS + effectiveFraction.value * availableLen.value)
+
+// All branches return the same key set so the resulting shape matches
+// `Record<string, string>` without producing `... | undefined` properties.
+const fillStyle = computed<Record<string, string>>(() => {
+  const center = thumbCenter.value
+  if (isVertical.value) {
+    // Source draws from y=barHeight (bottom) to y=centerY in Canvas coords.
+    // In CSS y grows downward, so fill is bottom-anchored regardless of reverse.
+    const fillH = Math.max(0, trackLength.value - (center - THUMB_RADIUS))
+    return {
+      left: '0',
+      right: '0',
+      top: 'auto',
+      bottom: '0',
+      width: 'auto',
+      height: `${fillH}px`,
+    }
+  }
+  if (props.reverseDirection) {
+    const leftPx = Math.max(0, center - THUMB_RADIUS)
+    return {
+      top: '0',
+      bottom: '0',
+      left: `${leftPx}px`,
+      right: '0',
+      width: 'auto',
+      height: 'auto',
+    }
+  }
+  const w = Math.min(trackLength.value, center + THUMB_RADIUS)
+  return {
+    top: '0',
+    bottom: '0',
+    left: '0',
+    right: 'auto',
+    width: `${w}px`,
+    height: 'auto',
+  }
+})
+
+const thumbStyle = computed<Record<string, string>>(() => {
+  const center = thumbCenter.value
+  if (isVertical.value) {
+    return { left: `${KNOB_OFFSET}px`, top: `${center - KNOB_RADIUS}px` }
+  }
+  return { top: `${KNOB_OFFSET}px`, left: `${center - KNOB_RADIUS}px` }
+})
 
 const thumbScale = computed(() => {
   if (props.disabled) return 1
@@ -110,26 +242,111 @@ const thumbScale = computed(() => {
   return 1
 })
 
-function snapToStep(value: number): number {
-  if (props.step <= 0) return value
-  const steps = Math.round((value - props.min) / props.step)
-  return props.min + steps * props.step
+interface KeyPointRender {
+  key: number
+  style: Record<string, string>
+  selected: boolean
 }
 
-function emitValueFromClientX(clientX: number): void {
-  if (!trackRef.value) return
+const keyPointRenders = computed<KeyPointRender[]>(() => {
+  const fractions = visibleKeyFractions.value
+  if (fractions.length === 0) return []
+  const out: KeyPointRender[] = []
+  const len = availableLen.value
+  const size = `${KEYPOINT_RADIUS * 2}px`
+  for (let i = 0; i < fractions.length; i++) {
+    const stepF = fractions[i] as number
+    const effStep = isVertical.value
+      ? props.reverseDirection
+        ? stepF
+        : 1 - stepF
+      : props.reverseDirection
+        ? 1 - stepF
+        : stepF
+    const pos = THUMB_RADIUS + effStep * len
+    // Tick is "selected" (foreground color) when it lies on the filled side.
+    // Source: horizontal non-reverse → x <= centerX; reverse → x >= centerX.
+    //         vertical → y >= centerY (always — fill is bottom-anchored).
+    const selected = isVertical.value
+      ? pos >= thumbCenter.value
+      : props.reverseDirection
+        ? pos >= thumbCenter.value
+        : pos <= thumbCenter.value
+    const style = isVertical.value
+      ? {
+          top: `${pos - KEYPOINT_RADIUS}px`,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: size,
+          height: size,
+        }
+      : {
+          left: `${pos - KEYPOINT_RADIUS}px`,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: size,
+          height: size,
+        }
+    out.push({ key: i, style, selected })
+  }
+  return out
+})
+
+function snapToStep(value: number): number {
+  if (props.step <= 0) return value
+  const n = Math.round((value - props.min) / props.step)
+  return props.min + n * props.step
+}
+
+function fractionToValue(f: number): number {
+  const clamped = Math.max(0, Math.min(1, f))
+  const linear = props.min + clamped * range.value
+  if (props.step > 0) {
+    return Math.max(props.min, Math.min(props.max, snapToStep(linear)))
+  }
+  const magnets = magnetFractions.value
+  if (magnets.length > 0) {
+    let bestF = magnets[0] as number
+    let bestD = Math.abs(bestF - clamped)
+    for (let i = 1; i < magnets.length; i++) {
+      const candidate = magnets[i] as number
+      const d = Math.abs(candidate - clamped)
+      if (d < bestD) {
+        bestD = d
+        bestF = candidate
+      }
+    }
+    if (bestD < props.magnetThreshold) {
+      return props.min + bestF * range.value
+    }
+  }
+  return linear
+}
+
+function pointerToVisualFraction(event: PointerEvent): number {
+  if (!trackRef.value) return 0
   const rect = trackRef.value.getBoundingClientRect()
-  // Map clientX into the available drag region [thumbRadius, trackWidth - thumbRadius].
-  const localX = clientX - rect.left
-  const usable = availableWidth.value
-  const x = Math.max(0, Math.min(usable, localX - THUMB_RADIUS))
-  const f = usable > 0 ? x / usable : 0
-  const raw = props.min + f * range.value
-  const next = snapToStep(raw)
-  const clamped = Math.max(props.min, Math.min(props.max, next))
-  if (clamped !== props.modelValue) {
-    emit('update:modelValue', clamped)
-    emit('change', clamped)
+  const len = availableLen.value
+  if (len <= 0) return 0
+  const local = isVertical.value
+    ? event.clientY - rect.top - THUMB_RADIUS
+    : event.clientX - rect.left - THUMB_RADIUS
+  return Math.max(0, Math.min(1, local / len))
+}
+
+function emitValueFromPointer(event: PointerEvent): void {
+  const visual = pointerToVisualFraction(event)
+  const fractionForValue = isVertical.value
+    ? props.reverseDirection
+      ? visual
+      : 1 - visual
+    : props.reverseDirection
+      ? 1 - visual
+      : visual
+  const next = fractionToValue(fractionForValue)
+  if (next !== props.modelValue) {
+    emit('update:modelValue', next)
+    emit('change', next)
   }
 }
 
@@ -140,8 +357,8 @@ function updateThumbHover(event: PointerEvent): void {
   }
   if (!trackRef.value) return
   const rect = trackRef.value.getBoundingClientRect()
-  const dx = event.clientX - rect.left - thumbCenterX.value
-  hoveredThumb.value = Math.abs(dx) <= THUMB_HIT_RADIUS
+  const pointer = isVertical.value ? event.clientY - rect.top : event.clientX - rect.left
+  hoveredThumb.value = Math.abs(pointer - thumbCenter.value) <= THUMB_HIT_RADIUS
 }
 
 function onPointerDown(event: PointerEvent): void {
@@ -150,12 +367,12 @@ function onPointerDown(event: PointerEvent): void {
   isDragging.value = true
   activePointerId = event.pointerId
   ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
-  emitValueFromClientX(event.clientX)
+  emitValueFromPointer(event)
 }
 
 function onPointerMove(event: PointerEvent): void {
   if (activePointerId === event.pointerId) {
-    emitValueFromClientX(event.clientX)
+    emitValueFromPointer(event)
     return
   }
   updateThumbHover(event)
@@ -168,6 +385,7 @@ function onPointerUp(event: PointerEvent): void {
   activePointerId = null
   ;(event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId)
   updateThumbHover(event)
+  emit('change-end')
 }
 
 function onPointerLeave(): void {
@@ -181,28 +399,36 @@ function onPointerLeave(): void {
     role="slider"
     tabindex="0"
     class="m-slider"
-    :class="{ 'm-slider--disabled': props.disabled }"
+    :class="[`m-slider--${props.orientation}`, { 'm-slider--disabled': props.disabled }]"
     :aria-valuemin="props.min"
     :aria-valuemax="props.max"
     :aria-valuenow="props.modelValue"
     :aria-disabled="props.disabled"
+    :aria-orientation="props.orientation"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerup="onPointerUp"
     @pointercancel="onPointerUp"
     @pointerleave="onPointerLeave"
   >
-    <div class="m-slider__fill" :style="{ width: `${fillWidth}px` }" />
+    <div class="m-slider__fill" :style="fillStyle" />
     <Motion
       class="m-slider__drag-overlay"
       :initial="false"
       :animate="{ opacity: isDragging ? 0.044 : 0 }"
       :transition="trackAlphaTransition"
     />
+    <div
+      v-for="kp in keyPointRenders"
+      :key="kp.key"
+      class="m-slider__keypoint"
+      :class="{ 'm-slider__keypoint--selected': kp.selected }"
+      :style="kp.style"
+    />
     <Motion
       class="m-slider__thumb"
       :initial="false"
-      :style="{ left: `${thumbCenterX - KNOB_RADIUS}px` }"
+      :style="thumbStyle"
       :animate="{ scale: thumbScale }"
       :transition="thumbScaleTransition"
     />
@@ -213,15 +439,24 @@ function onPointerLeave(): void {
 .m-slider {
   position: relative;
   display: block;
-  width: 100%;
-  height: 28px;
-  border-radius: 9999px;
   background: var(--m-color-slider-background);
   cursor: pointer;
   user-select: none;
   touch-action: none;
   outline: none;
   overflow: hidden;
+  border-radius: 9999px;
+
+  &--horizontal {
+    width: 100%;
+    height: 28px;
+  }
+
+  &--vertical {
+    width: 28px;
+    height: 100%;
+    min-height: 80px;
+  }
 
   &--disabled {
     cursor: not-allowed;
@@ -234,10 +469,6 @@ function onPointerLeave(): void {
 
   &__fill {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 0; // explicit default — Vue :style binding drives the actual width
     background: var(--m-color-primary);
     border-radius: 9999px;
     pointer-events: none;
@@ -252,10 +483,19 @@ function onPointerLeave(): void {
     pointer-events: none;
   }
 
+  &__keypoint {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--m-color-slider-key-point);
+    pointer-events: none;
+  }
+
+  &__keypoint--selected {
+    background: var(--m-color-slider-key-point-foreground);
+  }
+
   &__thumb {
     position: absolute;
-    // Track 28 - knob 20.16 = 7.84 of vertical space → 3.92 above and below.
-    top: 3.92px;
     width: 20.16px;
     height: 20.16px;
     border-radius: 50%;
