@@ -115,11 +115,15 @@ function onPointerDown(event: PointerEvent): void {
   pressed.value = true
   longPressed = false
 
-  // Capture the pointer so the press holds: the 3D tilt changes the element's
-  // hit geometry, which would otherwise fire pointerleave under the cursor and
-  // reset immediately. Capture suppresses boundary events until release.
+  // Capture the pointer so the press holds (the 3D tilt changes hit geometry
+  // and would otherwise fire pointerleave → reset). ONLY for a card that does
+  // its own press feedback: a plain `none` container must not capture, or it
+  // would steal pointerup/click from interactive children (checkbox, switch,
+  // preference rows) and they'd stop responding.
   const el = event.currentTarget as HTMLElement
-  el.setPointerCapture?.(event.pointerId)
+  if (isInteractive.value) {
+    el.setPointerCapture?.(event.pointerId)
+  }
 
   if (props.pressFeedback === 'tilt') {
     const rect = el.getBoundingClientRect()
