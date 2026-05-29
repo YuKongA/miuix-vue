@@ -207,6 +207,9 @@ function select(index: number): void {
   }
 
   &__item {
+    // Positioned so the labels paint above the absolute indicator (which is an
+    // earlier sibling); otherwise the selected tab's text hides behind it.
+    position: relative;
     flex: none;
     display: inline-flex;
     align-items: center;
