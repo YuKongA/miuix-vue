@@ -98,14 +98,14 @@ function select(index: number): void {
     :style="{ height: `${defaults.height}px`, '--m-tab-radius': `${defaults.radius}px` }"
   >
     <div class="m-tab-row__scroll" :style="{ padding: `${defaults.pad}px` }">
-      <Motion
-        class="m-tab-row__indicator"
-        :style="{ width: `${tabWidth}px`, borderRadius: `${defaults.radius}px` }"
-        :initial="false"
-        :animate="{ x: indicatorOffset }"
-        :transition="indicatorTransition"
-      />
       <div class="m-tab-row__track" :style="{ gap: `${defaults.spacing}px` }">
+        <Motion
+          class="m-tab-row__indicator"
+          :style="{ width: `${tabWidth}px`, borderRadius: `${defaults.radius}px` }"
+          :initial="false"
+          :animate="{ x: indicatorOffset }"
+          :transition="indicatorTransition"
+        />
         <button
           v-for="(tab, index) in props.tabs"
           :key="index"
@@ -159,21 +159,16 @@ function select(index: number): void {
     }
   }
 
+  // Indicator lives inside the track so it shares the tabs' origin (already
+  // inset by the scroll's contour padding) — no left/top offset mismatch.
   &__indicator {
     position: absolute;
     top: 0;
     bottom: 0;
     left: 0;
-    margin: auto 0;
     height: 100%;
     background: var(--m-color-surface-container);
     pointer-events: none;
-  }
-
-  &--contour &__indicator {
-    top: 5px;
-    bottom: 5px;
-    height: auto;
   }
 
   &__track {

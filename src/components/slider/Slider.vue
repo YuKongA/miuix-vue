@@ -77,13 +77,18 @@ const emit = defineEmits<{
   'change-end': []
 }>()
 
-const TRACK_THICKNESS = 28
-const THUMB_RADIUS = TRACK_THICKNESS / 2 // 14
-const KNOB_RADIUS = THUMB_RADIUS * 0.72 // 10.08
-const KNOB_OFFSET = THUMB_RADIUS - KNOB_RADIUS // 3.92
-const THUMB_HIT_RADIUS = KNOB_RADIUS + THUMB_RADIUS * 0.5 // 17.08
-const KEYPOINT_RADIUS = TRACK_THICKNESS / 7.5 // ≈3.733  (source: barHeight / 7.5)
 const SCALE_ACTIVE = 1.127
+
+// Geometry derives from the ACTUAL cross-axis thickness (track height for
+// horizontal, width for vertical), mirroring miuix's Canvas math where
+// thumbRadius = bar(Height|Width)/2. Hardcoding 28 skewed the knob + key
+// points whenever the thickness differed (e.g. the 25dp vertical sliders).
+const trackThickness = ref(28)
+const thumbRadius = computed(() => trackThickness.value / 2)
+const knobRadius = computed(() => thumbRadius.value * 0.72)
+const knobOffset = computed(() => thumbRadius.value - knobRadius.value)
+const keyPointRadius = computed(() => trackThickness.value / 7.5)
+const thumbHitRadius = computed(() => knobRadius.value + thumbRadius.value * 0.5)
 
 const thumbScaleTransition = folmeSpring(0.6, 987)
 const trackAlphaTransition = { duration: 0.15 }
@@ -153,6 +158,7 @@ function measureTrack(): void {
   if (!trackRef.value) return
   const rect = trackRef.value.getBoundingClientRect()
   trackLength.value = isVertical.value ? rect.height : rect.width
+  trackThickness.value = isVertical.value ? rect.width : rect.height
 }
 
 onMounted(() => {
@@ -178,7 +184,7 @@ const fraction = computed(() => {
   return Math.max(0, Math.min(1, (animatedValue.value - props.min) / range.value))
 })
 
-const availableLen = computed(() => Math.max(0, trackLength.value - 2 * THUMB_RADIUS))
+const availableLen = computed(() => Math.max(0, trackLength.value - 2 * thumbRadius.value))
 
 // Vertical default = bottom-to-top, so fraction=1 sits at the top (y=thumbRadius).
 const effectiveFraction = computed(() => {
@@ -187,7 +193,7 @@ const effectiveFraction = computed(() => {
   return props.reverseDirection ? 1 - f : f
 })
 
-const thumbCenter = computed(() => THUMB_RADIUS + effectiveFraction.value * availableLen.value)
+const thumbCenter = computed(() => thumbRadius.value + effectiveFraction.value * availableLen.value)
 
 // All branches return the same key set so the resulting shape matches
 // `Record<string, string>` without producing `... | undefined` properties.
@@ -196,7 +202,7 @@ const fillStyle = computed<Record<string, string>>(() => {
   if (isVertical.value) {
     // Source draws from y=barHeight (bottom) to y=centerY in Canvas coords.
     // In CSS y grows downward, so fill is bottom-anchored regardless of reverse.
-    const fillH = Math.max(0, trackLength.value - (center - THUMB_RADIUS))
+    const fillH = Math.max(0, trackLength.value - (center - thumbRadius.value))
     return {
       left: '0',
       right: '0',
@@ -207,7 +213,7 @@ const fillStyle = computed<Record<string, string>>(() => {
     }
   }
   if (props.reverseDirection) {
-    const leftPx = Math.max(0, center - THUMB_RADIUS)
+    const leftPx = Math.max(0, center - thumbRadius.value)
     return {
       top: '0',
       bottom: '0',
@@ -217,7 +223,7 @@ const fillStyle = computed<Record<string, string>>(() => {
       height: 'auto',
     }
   }
-  const w = Math.min(trackLength.value, center + THUMB_RADIUS)
+  const w = Math.min(trackLength.value, center + thumbRadius.value)
   return {
     top: '0',
     bottom: '0',
@@ -230,10 +236,22 @@ const fillStyle = computed<Record<string, string>>(() => {
 
 const thumbStyle = computed<Record<string, string>>(() => {
   const center = thumbCenter.value
+  // Knob diameter = 2 * knobRadius (scales with the actual track thickness).
+  const size = `${knobRadius.value * 2}px`
   if (isVertical.value) {
-    return { left: `${KNOB_OFFSET}px`, top: `${center - KNOB_RADIUS}px` }
+    return {
+      left: `${knobOffset.value}px`,
+      top: `${center - knobRadius.value}px`,
+      width: size,
+      height: size,
+    }
   }
-  return { top: `${KNOB_OFFSET}px`, left: `${center - KNOB_RADIUS}px` }
+  return {
+    top: `${knobOffset.value}px`,
+    left: `${center - knobRadius.value}px`,
+    width: size,
+    height: size,
+  }
 })
 
 const thumbScale = computed(() => {
@@ -253,7 +271,7 @@ const keyPointRenders = computed<KeyPointRender[]>(() => {
   if (fractions.length === 0) return []
   const out: KeyPointRender[] = []
   const len = availableLen.value
-  const size = `${KEYPOINT_RADIUS * 2}px`
+  const size = `${keyPointRadius.value * 2}px`
   for (let i = 0; i < fractions.length; i++) {
     const stepF = fractions[i] as number
     const effStep = isVertical.value
@@ -263,7 +281,7 @@ const keyPointRenders = computed<KeyPointRender[]>(() => {
       : props.reverseDirection
         ? 1 - stepF
         : stepF
-    const pos = THUMB_RADIUS + effStep * len
+    const pos = thumbRadius.value + effStep * len
     // Tick is "selected" (foreground color) when it lies on the filled side.
     // Source: horizontal non-reverse → x <= centerX; reverse → x >= centerX.
     //         vertical → y >= centerY (always — fill is bottom-anchored).
@@ -274,14 +292,14 @@ const keyPointRenders = computed<KeyPointRender[]>(() => {
         : pos <= thumbCenter.value
     const style = isVertical.value
       ? {
-          top: `${pos - KEYPOINT_RADIUS}px`,
+          top: `${pos - keyPointRadius.value}px`,
           left: '50%',
           transform: 'translateX(-50%)',
           width: size,
           height: size,
         }
       : {
-          left: `${pos - KEYPOINT_RADIUS}px`,
+          left: `${pos - keyPointRadius.value}px`,
           top: '50%',
           transform: 'translateY(-50%)',
           width: size,
@@ -329,8 +347,8 @@ function pointerToVisualFraction(event: PointerEvent): number {
   const len = availableLen.value
   if (len <= 0) return 0
   const local = isVertical.value
-    ? event.clientY - rect.top - THUMB_RADIUS
-    : event.clientX - rect.left - THUMB_RADIUS
+    ? event.clientY - rect.top - thumbRadius.value
+    : event.clientX - rect.left - thumbRadius.value
   return Math.max(0, Math.min(1, local / len))
 }
 
@@ -358,7 +376,7 @@ function updateThumbHover(event: PointerEvent): void {
   if (!trackRef.value) return
   const rect = trackRef.value.getBoundingClientRect()
   const pointer = isVertical.value ? event.clientY - rect.top : event.clientX - rect.left
-  hoveredThumb.value = Math.abs(pointer - thumbCenter.value) <= THUMB_HIT_RADIUS
+  hoveredThumb.value = Math.abs(pointer - thumbCenter.value) <= thumbHitRadius.value
 }
 
 function onPointerDown(event: PointerEvent): void {
@@ -496,8 +514,7 @@ function onPointerLeave(): void {
 
   &__thumb {
     position: absolute;
-    width: 20.16px;
-    height: 20.16px;
+    // width / height come from inline style (knobRadius * 2, thickness-derived).
     border-radius: 50%;
     background: var(--m-color-on-primary);
     transform-origin: center center;
