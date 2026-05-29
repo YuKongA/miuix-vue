@@ -47,6 +47,9 @@ const emit = defineEmits<{
 const SINK_AMOUNT = 0.94
 const TILT_AMOUNT = 8
 const LONG_PRESS_MS = 500
+// Perspective = card width × this factor. The ±8° angle is fixed (miuix
+// tiltAmount); a larger factor pushes the camera back, easing the press depth.
+const TILT_PERSPECTIVE_FACTOR = 1.6
 
 const sinkSpring = folmeSpring(0.8, 600)
 const tiltSpring = folmeSpring(0.6, 400)
@@ -125,7 +128,7 @@ function onPointerDown(event: PointerEvent): void {
     const halfW = rect.width / 2
     const halfH = rect.height / 2
 
-    tiltPerspective.value = `${rect.width}px`
+    tiltPerspective.value = `${rect.width * TILT_PERSPECTIVE_FACTOR}px`
     tiltOriginX.value = offsetX < halfW ? '100%' : '0%'
     tiltOriginY.value = offsetY < halfH ? '100%' : '0%'
     tiltX.value = offsetY < halfH ? TILT_AMOUNT : -TILT_AMOUNT
