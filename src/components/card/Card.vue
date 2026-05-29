@@ -10,7 +10,7 @@
 //             pivot follows touch quadrant, cameraDistance 12 * density
 
 import { Motion } from 'motion-v'
-import { computed, getCurrentInstance, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { folmeSpring } from '../../anim'
 
 defineOptions({ name: 'MiuixCard' })
@@ -22,26 +22,31 @@ interface Props {
   pressFeedback?: MiuixCardPressFeedback
   // Background / content color are CSS-variable customization points
   // (--m-card-color / --m-card-content-color), not props, per CLAUDE.md rule #2.
-  /** Draw the MiuixIndication alpha overlay on press (only when clickable). */
+  /** Draw the MiuixIndication alpha overlay on hover/press. */
   showIndication?: boolean
+  /** Latch the press feedback on (e.g. while a long-press dialog is open). */
+  holdDown?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   pressFeedback: 'none',
   showIndication: false,
+  holdDown: false,
 })
 
-// miuix attaches the indication only via combinedClickable, i.e. only when an
-// onClick/onLongPress is present — a non-clickable card never shows it.
-const instance = getCurrentInstance()
-const showOverlay = computed(() => props.showIndication && !!instance?.vnode.props?.onClick)
+// showIndication wires the MiuixIndication via the pressable hover/press path,
+// independent of click — a non-clickable card (e.g. the primaryVariant demo)
+// still shows it. So gate the overlay on the flag alone.
+const showOverlay = computed(() => props.showIndication)
 
 const emit = defineEmits<{
   click: [event: MouseEvent]
+  longPress: []
 }>()
 
 const SINK_AMOUNT = 0.94
 const TILT_AMOUNT = 8
+const LONG_PRESS_MS = 500
 
 const sinkSpring = folmeSpring(0.8, 600)
 const tiltSpring = folmeSpring(0.6, 400)
@@ -51,12 +56,18 @@ const tiltX = ref(0)
 const tiltY = ref(0)
 const tiltOriginX = ref('50%')
 const tiltOriginY = ref('50%')
+// Perspective scales with the card width so the tilt's foreshortening is
+// size-invariant (mirrors Compose's density-relative cameraDistance). A fixed
+// tiny value (e.g. 12px) is degenerate: the near edge folds through the camera.
+const tiltPerspective = ref('1000px')
 
 const isInteractive = computed(() => props.pressFeedback !== 'none')
+// Sink/tilt stay engaged while held down (HoldDownInteraction in source).
+const engaged = computed(() => pressed.value || props.holdDown)
 
 const animateTarget = computed(() => {
   if (props.pressFeedback === 'sink') {
-    return { scale: pressed.value ? SINK_AMOUNT : 1 }
+    return { scale: engaged.value ? SINK_AMOUNT : 1 }
   }
   if (props.pressFeedback === 'tilt') {
     return { rotateX: tiltX.value, rotateY: tiltY.value }
@@ -75,8 +86,25 @@ const cardStyle = computed(() => ({
   cursor: isInteractive.value ? 'pointer' : undefined,
 }))
 
+// Perspective on the wrapper keeps the camera centred (perspective-origin
+// 50/50, like Compose's centred camera); the pivot is the card's transform-origin.
+const wrapperStyle = computed(() =>
+  props.pressFeedback === 'tilt' ? { perspective: tiltPerspective.value } : undefined,
+)
+
+let pressTimer: ReturnType<typeof setTimeout> | null = null
+let longPressed = false
+
+function clearPressTimer(): void {
+  if (pressTimer !== null) {
+    clearTimeout(pressTimer)
+    pressTimer = null
+  }
+}
+
 function onPointerDown(event: PointerEvent): void {
   pressed.value = true
+  longPressed = false
 
   if (props.pressFeedback === 'tilt') {
     const target = event.currentTarget as HTMLElement
@@ -86,26 +114,45 @@ function onPointerDown(event: PointerEvent): void {
     const halfW = rect.width / 2
     const halfH = rect.height / 2
 
+    tiltPerspective.value = `${rect.width}px`
     tiltOriginX.value = offsetX < halfW ? '100%' : '0%'
     tiltOriginY.value = offsetY < halfH ? '100%' : '0%'
     tiltX.value = offsetY < halfH ? TILT_AMOUNT : -TILT_AMOUNT
     tiltY.value = offsetX < halfW ? -TILT_AMOUNT : TILT_AMOUNT
   }
+
+  clearPressTimer()
+  pressTimer = setTimeout(() => {
+    longPressed = true
+    emit('longPress')
+  }, LONG_PRESS_MS)
 }
 
 function release(): void {
   pressed.value = false
   tiltX.value = 0
   tiltY.value = 0
+  // Recenter the pivot so the spring-back rotates about the centre
+  // (source onCancelPointerInput resets transformOrigin to Center).
+  tiltOriginX.value = '50%'
+  tiltOriginY.value = '50%'
+  clearPressTimer()
 }
 
 function onClick(event: MouseEvent): void {
+  // A completed long-press swallows the click (combinedClickable parity).
+  if (longPressed) {
+    longPressed = false
+    return
+  }
   emit('click', event)
 }
+
+onUnmounted(clearPressTimer)
 </script>
 
 <template>
-  <div class="m-card-wrapper" :class="{ 'm-card-wrapper--3d': props.pressFeedback === 'tilt' }">
+  <div class="m-card-wrapper" :style="wrapperStyle">
     <Motion
       class="m-card"
       :class="[`m-card--feedback-${props.pressFeedback}`, { 'm-card--indication': showOverlay }]"
@@ -124,16 +171,12 @@ function onClick(event: MouseEvent): void {
 </template>
 
 <style lang="scss">
-// 3D tilt needs perspective on a parent element so the rotation is rendered
-// with depth. cameraDistance = 12 * density in miuix → perspective: 12px in
-// CSS logical pixels (1 dp = 1 CSS px).
+// 3D tilt needs perspective on a parent so the rotation renders with depth.
+// The value is bound inline (wrapperStyle) to the card's pixel width, since
+// Compose's cameraDistance is density-relative and a fixed tiny px is degenerate.
 .m-card-wrapper {
   // Block by default so cards fill the available width (miuix fillMaxWidth).
   display: block;
-
-  &--3d {
-    perspective: 12px;
-  }
 }
 
 .m-card {

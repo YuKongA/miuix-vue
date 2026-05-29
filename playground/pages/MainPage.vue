@@ -73,6 +73,16 @@ function confirmVolume(): void {
 
 // Dialog
 const dialogOpen = ref(false)
+// Card long-press demo: open a dialog and keep the card held-down while it shows.
+const cardDialogOpen = ref(false)
+const cardHoldDown = ref(false)
+function onCardLongPress(): void {
+  cardDialogOpen.value = true
+  cardHoldDown.value = true
+}
+function onCardDialogClose(): void {
+  cardHoldDown.value = false
+}
 
 // BottomSheet
 const bottomSheetOpen = ref(false)
@@ -607,7 +617,11 @@ const pickedColor = ref('rgb(52, 130, 255)')
 
     <!-- Card -->
     <MiuixSmallTitle text="Card" />
-    <MiuixCard class="ex-card ex-card--pad" style="--m-card-color: var(--m-color-primary-variant)">
+    <MiuixCard
+      show-indication
+      class="ex-card ex-card--pad"
+      style="--m-card-color: var(--m-color-primary-variant)"
+    >
       <MiuixText :size="19" weight="semibold" color="var(--m-color-on-primary-variant)"
         >Card</MiuixText
       >
@@ -619,16 +633,28 @@ const pickedColor = ref('rgb(52, 130, 255)')
       <MiuixCard press-feedback="sink" class="ex-card--pad ex-grow">
         <MiuixText :size="18" weight="medium">Card</MiuixText>
         <MiuixText type="paragraph" color="var(--m-color-on-surface-variant-summary)"
-          >PressFeedback Type: Sink</MiuixText
+          >PressFeedback<br />Type: Sink</MiuixText
         >
       </MiuixCard>
       <MiuixCard press-feedback="tilt" class="ex-card--pad ex-grow">
         <MiuixText :size="18" weight="medium">Card</MiuixText>
         <MiuixText type="paragraph" color="var(--m-color-on-surface-variant-summary)"
-          >PressFeedback Type: Tilt</MiuixText
+          >PressFeedback<br />Type: Tilt</MiuixText
         >
       </MiuixCard>
     </div>
+    <MiuixCard
+      press-feedback="sink"
+      show-indication
+      :hold-down="cardHoldDown"
+      class="ex-card ex-card--pad"
+      @long-press="onCardLongPress"
+    >
+      <MiuixText :size="18" weight="medium">Card</MiuixText>
+      <MiuixText type="paragraph" color="var(--m-color-on-surface-variant-summary)"
+        >Long press to show dialog</MiuixText
+      >
+    </MiuixCard>
 
     <div class="ex-spacer" />
 
@@ -637,6 +663,20 @@ const pickedColor = ref('rgb(52, 130, 255)')
       v-model="dialogOpen"
       title="Dialog"
       summary="A dialog component inside MiuixPopupHost."
+    >
+      <template #default="{ close }">
+        <div class="ex-dialog-actions">
+          <MiuixButton class="ex-grow" @click="close">Cancel</MiuixButton>
+          <MiuixButton class="ex-grow" type="primary" @click="close">Confirm</MiuixButton>
+        </div>
+      </template>
+    </MiuixDialog>
+
+    <MiuixDialog
+      v-model="cardDialogOpen"
+      title="Long Press Action"
+      summary="Triggered by long pressing the card."
+      @close="onCardDialogClose"
     >
       <template #default="{ close }">
         <div class="ex-dialog-actions">
