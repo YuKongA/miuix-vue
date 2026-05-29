@@ -32,7 +32,6 @@ interface Props {
   max?: number
   step?: number
   disabled?: boolean
-  reverseDirection?: boolean
   showKeyPoints?: boolean
   keyPoints?: number[]
   magnetThreshold?: number
@@ -44,7 +43,6 @@ const props = withDefaults(defineProps<Props>(), {
   max: 100,
   step: 0,
   disabled: false,
-  reverseDirection: false,
   showKeyPoints: false,
   keyPoints: () => [],
   magnetThreshold: 0.02,
@@ -65,7 +63,7 @@ const KEYPOINT_RADIUS = 3.855 // source: SliderDefaults.KeyPointRadius
 const SCALE_ACTIVE = 1.127
 
 const thumbScaleTransition = folmeSpring(0.6, 987)
-const trackAlphaTransition = { duration: 0.15 }
+const trackAlphaTransition = { duration: 0.15, ease: [0.4, 0, 0.2, 1] as const }
 const progressDraggingSpec = folmeSpring(0.9, 1755)
 const progressIdleSpec = folmeSpring(0.96, 322)
 
@@ -192,15 +190,12 @@ function valueToFraction(v: number): number {
   return Math.max(0, Math.min(1, (v - props.min) / range.value))
 }
 
-function effectiveFraction(f: number): number {
-  return props.reverseDirection ? 1 - f : f
-}
-
+// Source RangeSlider has no reverseDirection; direction is purely LTR here.
 const startThumbCenter = computed(
-  () => THUMB_RADIUS + effectiveFraction(valueToFraction(animatedStart.value)) * availableLen.value,
+  () => THUMB_RADIUS + valueToFraction(animatedStart.value) * availableLen.value,
 )
 const endThumbCenter = computed(
-  () => THUMB_RADIUS + effectiveFraction(valueToFraction(animatedEnd.value)) * availableLen.value,
+  () => THUMB_RADIUS + valueToFraction(animatedEnd.value) * availableLen.value,
 )
 
 // Fill spans between the two thumbs.
@@ -253,8 +248,7 @@ const keyPointRenders = computed<KeyPointRender[]>(() => {
   const hi = Math.max(startThumbCenter.value, endThumbCenter.value)
   for (let i = 0; i < fractions.length; i++) {
     const stepF = fractions[i] as number
-    const eff = props.reverseDirection ? 1 - stepF : stepF
-    const pos = THUMB_RADIUS + eff * len
+    const pos = THUMB_RADIUS + stepF * len
     const selected = pos >= lo && pos <= hi
     out.push({
       key: i,
@@ -306,8 +300,7 @@ function offsetToValue(offsetPx: number): number {
   const len = availableLen.value
   if (len <= 0) return props.min
   const visual = Math.max(0, Math.min(1, (offsetPx - THUMB_RADIUS) / len))
-  const f = props.reverseDirection ? 1 - visual : visual
-  return fractionToValue(f)
+  return fractionToValue(visual)
 }
 
 function emitChange(start: number, end: number): void {
@@ -396,7 +389,7 @@ function onPointerMove(event: PointerEvent): void {
     const tentative = startDragOffset + dragAmount
     const candidate = offsetToValue(tentative)
     const newStart = Math.min(candidate, currentEndValue.value)
-    const crossCondition = props.reverseDirection ? dragAmount < 0 : dragAmount > 0
+    const crossCondition = dragAmount > 0
     if (
       newStart >= currentEndValue.value &&
       crossCondition &&
@@ -418,7 +411,7 @@ function onPointerMove(event: PointerEvent): void {
     const tentative = endDragOffset + dragAmount
     const candidate = offsetToValue(tentative)
     const newEnd = Math.max(candidate, currentStartValue.value)
-    const crossCondition = props.reverseDirection ? dragAmount > 0 : dragAmount < 0
+    const crossCondition = dragAmount < 0
     if (
       newEnd <= currentStartValue.value &&
       crossCondition &&
@@ -518,9 +511,18 @@ function onPointerLeave(): void {
   outline: none;
   overflow: hidden;
 
+  // Disabled swaps to the dedicated disabled tokens (miuix SliderColors); key
+  // points are not enabled-dependent, so they stay unchanged.
   &--disabled {
     cursor: not-allowed;
-    opacity: 0.5;
+    background: var(--m-color-disabled-secondary);
+
+    .m-range-slider__fill {
+      background: var(--m-color-disabled-primary-slider);
+    }
+    .m-range-slider__thumb {
+      background: var(--m-color-disabled-on-primary);
+    }
   }
 
   &:focus-visible {

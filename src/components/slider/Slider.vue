@@ -91,7 +91,8 @@ const keyPointRadius = computed(() => trackThickness.value / 7.5)
 const thumbHitRadius = computed(() => knobRadius.value + thumbRadius.value * 0.5)
 
 const thumbScaleTransition = folmeSpring(0.6, 987)
-const trackAlphaTransition = { duration: 0.15 }
+// tween(150) with Compose's default FastOutSlowInEasing (cubic-bezier .4,0,.2,1).
+const trackAlphaTransition = { duration: 0.15, ease: [0.4, 0, 0.2, 1] as const }
 const progressDraggingSpec = folmeSpring(0.9, 1755)
 const progressIdleSpec = folmeSpring(0.96, 322)
 
@@ -476,9 +477,18 @@ function onPointerLeave(): void {
     min-height: 80px;
   }
 
+  // Disabled swaps to the dedicated disabled tokens at full alpha (miuix
+  // SliderColors); key points are NOT enabled-dependent, so they stay unchanged.
   &--disabled {
     cursor: not-allowed;
-    opacity: 0.5;
+    background: var(--m-color-disabled-secondary);
+
+    .m-slider__fill {
+      background: var(--m-color-disabled-primary-slider);
+    }
+    .m-slider__thumb {
+      background: var(--m-color-disabled-on-primary);
+    }
   }
 
   &:focus-visible {
