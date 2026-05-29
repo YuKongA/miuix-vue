@@ -1,12 +1,13 @@
 <script setup lang="ts">
-// miuix-vue example app — mirrors the miuix example shell: a Scaffold with a
-// TopAppBar, a 5-tab bottom NavigationBar, and a keep-alive paged body
-// (Home / Icon / Color / TextStyle / Settings).
+// miuix-vue example app — a TopAppBar, a 5-tab bottom NavigationBar, and a
+// keep-alive paged body (Home / Icon / Color / TextStyle / Settings). The
+// app shell is plain flex layout (no Scaffold): on web, flexbox auto-sizes
+// the scroll body between the fixed bars, so no measure/inset coordination is
+// needed. SnackbarHost stays a standalone teleport singleton.
 import { computed, ref } from 'vue'
 import {
   MiuixIconButton,
   MiuixNavigationBar,
-  MiuixScaffold,
   MiuixSnackbarHost,
   MiuixTopAppBar,
   useTheme,
@@ -36,8 +37,8 @@ const glyphs = ['▤', '✦', '◑', 'A', '⚙']
 </script>
 
 <template>
-  <MiuixScaffold class="app">
-    <template #top-bar>
+  <div class="app">
+    <div class="app__top">
       <MiuixTopAppBar :title="activeTitle" class="app__bar">
         <template #actions>
           <MiuixIconButton aria-label="Toggle theme" @click="toggleTheme">
@@ -45,22 +46,24 @@ const glyphs = ['▤', '✦', '◑', 'A', '⚙']
           </MiuixIconButton>
         </template>
       </MiuixTopAppBar>
-    </template>
+    </div>
 
-    <Transition name="page" mode="out-in">
-      <KeepAlive>
-        <component :is="activePage" :key="navIndex" />
-      </KeepAlive>
-    </Transition>
+    <div class="app__body">
+      <Transition name="page" mode="out-in">
+        <KeepAlive>
+          <component :is="activePage" :key="navIndex" />
+        </KeepAlive>
+      </Transition>
+    </div>
 
-    <template #bottom-bar>
+    <div class="app__bottom">
       <MiuixNavigationBar v-model="navIndex" :items="navItems">
         <template #icon="{ index }">
           <span class="app__nav-glyph">{{ glyphs[index] }}</span>
         </template>
       </MiuixNavigationBar>
-    </template>
-  </MiuixScaffold>
+    </div>
+  </div>
 
   <MiuixSnackbarHost />
 </template>
@@ -79,10 +82,29 @@ body {
 }
 
 .app {
+  display: flex;
+  flex-direction: column;
   height: 100vh;
+  min-height: 0;
+  background: var(--m-color-surface);
+
+  &__top,
+  &__bottom {
+    flex: none;
+    z-index: 10;
+  }
+
+  // flex:1 + min-height:0 makes the body take exactly the gap between the
+  // fixed bars and scroll internally (the one flex invariant worth pinning).
+  &__body {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
 
   // Bars + scroll body sit on the surface backdrop behind the cards.
-  .m-scaffold__body,
+  &__body,
   &__bar,
   .m-navigation-bar {
     background: var(--m-color-surface);

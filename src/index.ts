@@ -52,7 +52,6 @@ export { MiuixColorPicker } from './components/color-picker'
 export { MiuixFloatingActionButton } from './components/fab'
 export { MiuixTopAppBar } from './components/top-app-bar'
 export { MiuixNavigationBar, type MiuixNavigationItem } from './components/navigation-bar'
-export { MiuixScaffold } from './components/scaffold'
 export { MiuixBottomSheet } from './components/bottom-sheet'
 
 export { IconArrowRight, IconArrowUpDown, IconCheck, IconSearch } from './icons'
