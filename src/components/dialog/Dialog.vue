@@ -2,24 +2,20 @@
 // Copyright 2026, miuix-vue contributors
 // SPDX-License-Identifier: Apache-2.0
 //
-// Ported from miuix-ui/.../overlay/OverlayDialog.kt + DialogContentLayout.kt.
+// Ported from miuix-ui/.../layout/DialogContentLayout.kt + overlay/OverlayDialog.kt.
 //
-// Animation specs (large-screen flavor, 1:1 with source):
-//   Enter:    folmeSpringByResponse(0.9, 0.3) → stiffness ≈ 4376
-//             scale 0.8 → 1.0, alpha 0 → 1
-//   Exit:     tween 260ms with DecelerateEasing(1.5)
-//   Dim in:   tween 300ms with DecelerateEasing(1.5)
-//   Dim out:  tween 250ms with DecelerateEasing(1.5)
-//
-// POC scope:
-//   - v-model:open + title + width + close-on-click-modal + align-center
-//   - Default + header + footer slots
-//   - Teleport to body so dialog escapes containing stacking contexts
-// MVP TODO: small-screen variant (translateY enter), predictive back gesture,
-//           focus-trap + ARIA wiring.
+// Web uses the large-screen (centered) variant only — the standard modal idiom
+// (per goal: one popup style). Specs (DialogDefaults / DialogContent):
+//   - content: maxWidth 420, insideMargin 24, cornerRadius = coerceAtLeast(32)
+//   - title:   title4 (18) / weight Medium / centered / onBackground / mb 12
+//   - summary: body1 (16) / centered / onSurfaceSecondary / mb 12
+//   - background = colorScheme.background; outsideMargin 12
+// Animations (1:1):
+//   enter content  folmeSpring(0.9, 0.3) → stiffness ≈ 4376, scale 0.8→1 + alpha
+//   exit content   tween 260ms DecelerateEasing(1.5)
+//   dim in/out     tween 300/250ms DecelerateEasing(1.5)
 
 import { AnimatePresence, Motion } from 'motion-v'
-import { computed } from 'vue'
 import { decelerateEasing, folmeSpringByResponse } from '../../anim'
 
 defineOptions({ name: 'MiuixDialog' })
@@ -27,16 +23,14 @@ defineOptions({ name: 'MiuixDialog' })
 interface Props {
   modelValue?: boolean
   title?: string
-  width?: string | number
-  alignCenter?: boolean
+  summary?: string
   closeOnClickModal?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: false,
   title: '',
-  width: '420px',
-  alignCenter: true,
+  summary: '',
   closeOnClickModal: true,
 })
 
@@ -50,10 +44,6 @@ const contentEnterTransition = folmeSpringByResponse(0.9, 0.3)
 const contentExitTransition = { duration: 0.26, ease: decelerateEasing(1.5) }
 const dimEnterTransition = { duration: 0.3, ease: decelerateEasing(1.5) }
 const dimExitTransition = { duration: 0.25, ease: decelerateEasing(1.5) }
-
-const widthStyle = computed(() =>
-  typeof props.width === 'number' ? `${props.width}px` : props.width,
-)
 
 function close(): void {
   emit('update:modelValue', false)
@@ -71,7 +61,6 @@ function onBackdropClick(): void {
       <Motion
         v-if="props.modelValue"
         class="m-dialog__backdrop"
-        :class="{ 'm-dialog__backdrop--align-center': props.alignCenter }"
         :initial="{ opacity: 0 }"
         :animate="{ opacity: 1 }"
         :exit="{ opacity: 0 }"
@@ -81,25 +70,19 @@ function onBackdropClick(): void {
       >
         <Motion
           class="m-dialog__content"
-          :style="{ width: widthStyle }"
+          role="dialog"
+          aria-modal="true"
           :initial="{ opacity: 0, scale: 0.8 }"
           :animate="{ opacity: 1, scale: 1 }"
           :exit="{ opacity: 0, scale: 0.8 }"
           :transition="contentEnterTransition"
           :exit-transition="contentExitTransition"
-          @click.stop
         >
-          <header v-if="props.title || $slots.header" class="m-dialog__header">
-            <slot name="header">
-              <h2 class="m-dialog__title">{{ props.title }}</h2>
-            </slot>
-          </header>
+          <h2 v-if="props.title" class="m-dialog__title">{{ props.title }}</h2>
+          <p v-if="props.summary" class="m-dialog__summary">{{ props.summary }}</p>
           <div class="m-dialog__body">
-            <slot />
+            <slot :close="close" />
           </div>
-          <footer v-if="$slots.footer" class="m-dialog__footer">
-            <slot name="footer" :close="close" />
-          </footer>
         </Motion>
       </Motion>
     </AnimatePresence>
@@ -113,49 +96,48 @@ function onBackdropClick(): void {
     inset: 0;
     z-index: 1000;
     display: flex;
+    align-items: center;
     justify-content: center;
+    // outsideMargin 12 per side.
+    padding: 12px;
+    box-sizing: border-box;
     background: var(--m-color-window-dimming);
-
-    &--align-center {
-      align-items: center;
-    }
   }
 
   &__content {
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    // DialogDefaults.MaxWidth = 420dp; outsideMargin = 12dp per side → 24 total.
-    max-width: min(420px, calc(100% - 24px));
-    max-height: 66.6666%; // windowHeight * 2/3
-    border-radius: var(--m-radius-md);
-    // DialogDefaults.backgroundColor() = MiuixTheme.colorScheme.background.
+    width: 420px;
+    max-width: 100%;
+    // heightIn(max = windowHeight * 2/3) on large screen.
+    max-height: 66.6666vh;
+    // bottomCornerRadius coerceAtLeast(32) on web (no device corner).
+    border-radius: 32px;
+    // insideMargin 24×24.
+    padding: 24px;
     background: var(--m-color-background);
     color: var(--m-color-on-background);
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
-    overflow: hidden;
-  }
-
-  &__header {
-    padding: 24px 24px 8px;
+    overflow: hidden auto;
   }
 
   &__title {
-    margin: 0;
+    margin: 0 0 12px;
     font-size: var(--m-text-title4-size);
-    font-weight: 700;
+    font-weight: 500;
+    text-align: center;
+    color: var(--m-color-on-background);
+  }
+
+  &__summary {
+    margin: 0 0 12px;
+    font-size: var(--m-text-body1-size);
+    text-align: center;
+    color: var(--m-color-on-surface-secondary);
   }
 
   &__body {
-    padding: 8px 24px;
-    overflow: auto;
-    font-size: var(--m-text-body1-size);
-  }
-
-  &__footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    padding: 16px 24px 24px;
+    // content area
   }
 }
 </style>
