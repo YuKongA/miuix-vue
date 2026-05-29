@@ -130,19 +130,38 @@ function emitChange(): void {
   emit('update:modelValue', selectedColor.value)
 }
 
-const hueGradient =
-  'linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)'
-const saturationGradient = computed(() => {
+// Hue spectrum: anchors every 60° (red→yellow→green→cyan→blue→magenta→red).
+// HSV→RGB is piecewise-linear in sRGB across each 60° band, so these 7 exact
+// 1/6-fraction stops reproduce generateHsvHueColors()'s 36-step ramp exactly.
+const hueStops = [
+  { color: '#f00', at: 0 },
+  { color: '#ff0', at: 1 / 6 },
+  { color: '#0f0', at: 2 / 6 },
+  { color: '#0ff', at: 3 / 6 },
+  { color: '#00f', at: 4 / 6 },
+  { color: '#f0f', at: 5 / 6 },
+  { color: '#f00', at: 1 },
+]
+const saturationStops = computed(() => {
   const [r, g, b] = hsvToRgb(h.value, 1, 1)
-  return `linear-gradient(to right, #fff, rgb(${r}, ${g}, ${b}))`
+  return [
+    { color: '#fff', at: 0 },
+    { color: `rgb(${r}, ${g}, ${b})`, at: 1 },
+  ]
 })
-const valueGradient = computed(() => {
+const valueStops = computed(() => {
   const [r, g, b] = hsvToRgb(h.value, s.value, 1)
-  return `linear-gradient(to right, #000, rgb(${r}, ${g}, ${b}))`
+  return [
+    { color: '#000', at: 0 },
+    { color: `rgb(${r}, ${g}, ${b})`, at: 1 },
+  ]
 })
-const alphaGradient = computed(() => {
+const alphaStops = computed(() => {
   const [r, g, b] = hsvToRgb(h.value, s.value, v.value)
-  return `linear-gradient(to right, rgba(${r}, ${g}, ${b}, 0), rgb(${r}, ${g}, ${b}))`
+  return [
+    { color: `rgba(${r}, ${g}, ${b}, 0)`, at: 0 },
+    { color: `rgb(${r}, ${g}, ${b})`, at: 1 },
+  ]
 })
 
 const hueValue = computed({
@@ -173,15 +192,10 @@ function setAlpha(val: number): void {
       class="m-color-picker__preview"
       :style="{ background: selectedColor }"
     />
-    <ColorSlider v-model="hueValue" :gradient="hueGradient" />
-    <ColorSlider :model-value="s" :gradient="saturationGradient" @update:model-value="setSat" />
-    <ColorSlider :model-value="v" :gradient="valueGradient" @update:model-value="setVal" />
-    <ColorSlider
-      :model-value="alpha"
-      :gradient="alphaGradient"
-      checker
-      @update:model-value="setAlpha"
-    />
+    <ColorSlider v-model="hueValue" :stops="hueStops" />
+    <ColorSlider :model-value="s" :stops="saturationStops" @update:model-value="setSat" />
+    <ColorSlider :model-value="v" :stops="valueStops" @update:model-value="setVal" />
+    <ColorSlider :model-value="alpha" :stops="alphaStops" checker @update:model-value="setAlpha" />
   </div>
 </template>
 

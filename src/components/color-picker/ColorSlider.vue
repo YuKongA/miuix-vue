@@ -7,15 +7,28 @@
 // ring indicator (6px stroke + soft glow). The value (0..1) maps so the
 // indicator center travels from half-height to width - half-height
 // (handleSliderInteraction).
+//
+// The source's Brush.horizontalGradient runs startX = height/2 (13) to
+// endX = width - 13 with TileMode.Clamp — i.e. the colour ramp is inset by 13px
+// each side and the ends are held flat. We reproduce that with px-anchored
+// colour stops: each stop sits at calc(13px + (100% - 26px) * at), and CSS
+// clamps to the first/last colour outside the first/last stop.
 
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 defineOptions({ name: 'MiuixColorSlider' })
 
+interface ColorStop {
+  /** CSS colour. */
+  color: string
+  /** Position along the inset ramp, 0..1. */
+  at: number
+}
+
 interface Props {
   modelValue?: number
-  /** CSS gradient (e.g. 'linear-gradient(to right, ...)'). */
-  gradient: string
+  /** Colour ramp as ordered stops (0..1); inset by 13px per side at render. */
+  stops: ColorStop[]
   /** Render an alpha checkerboard behind the gradient. */
   checker?: boolean
 }
@@ -24,6 +37,14 @@ const props = withDefaults(defineProps<Props>(), {
   modelValue: 0,
   checker: false,
 })
+
+// startX = height/2 = 13, endX = width - 13 → ramp width = 100% - 26px.
+const gradientCss = computed(
+  () =>
+    `linear-gradient(to right, ${props.stops
+      .map((stop) => `${stop.color} calc(13px + (100% - 26px) * ${stop.at})`)
+      .join(', ')})`,
+)
 
 const emit = defineEmits<{ 'update:modelValue': [value: number] }>()
 
@@ -88,7 +109,7 @@ function indicatorLeft(): number {
     @pointerup="onUp"
     @pointercancel="onUp"
   >
-    <div class="m-color-slider__gradient" :style="{ backgroundImage: gradient }" />
+    <div class="m-color-slider__gradient" :style="{ backgroundImage: gradientCss }" />
     <div
       class="m-color-slider__indicator"
       :style="{ left: `${indicatorLeft()}px` }"
@@ -116,7 +137,9 @@ function indicatorLeft(): number {
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    box-shadow: inset 0 0 0 0.5px rgba(128, 128, 128, 0.1);
+    // borderColor = Color.Gray.copy(0.1) = rgba(136,136,136,0.1) (Color.Gray is
+    // 0xFF888888, not CSS gray #808080); 0.5px stroke over the full capsule.
+    box-shadow: inset 0 0 0 0.5px rgba(136, 136, 136, 0.1);
   }
 
   &__indicator {
@@ -127,8 +150,10 @@ function indicatorLeft(): number {
     margin-top: -10px;
     margin-left: -10px;
     border-radius: 50%;
-    border: 3px solid #fff;
+    // White ring: 6dp stroke (ringCenterRadius 7 → spans radius 4..10).
+    border: 6px solid #fff;
     box-sizing: border-box;
+    // glow: radialGradient peaking at black 0.25 around the ring band ±2dp.
     box-shadow: 0 0 2px rgba(0, 0, 0, 0.25);
     pointer-events: none;
   }
