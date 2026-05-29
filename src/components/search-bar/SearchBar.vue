@@ -58,7 +58,10 @@ function onEnter(): void {
   emit('search', props.modelValue)
 }
 
-const cancelTransition = { type: 'spring' as const, stiffness: 400, damping: 34 }
+// AnimatedVisibility size transitions default to spring(StiffnessMediumLow=400,
+// dampingRatio=1) → damping = 2*1*sqrt(400) = 40.
+const cancelTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
+const resultsTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
 </script>
 
 <template>
@@ -80,33 +83,42 @@ const cancelTransition = { type: 'spring' as const, stiffness: 400, damping: 34 
             @keydown.enter.prevent="onEnter"
           />
         </span>
-        <button
-          v-if="props.modelValue"
-          type="button"
-          class="m-search-bar__clear"
-          aria-label="Clear"
-          @mousedown.prevent
-          @click="clear"
-        >
-          <svg viewBox="0 0 24 24" width="16" height="16">
-            <circle cx="12" cy="12" r="11" fill="currentColor" opacity="0.12" />
-            <path
-              d="M8 8 L16 16 M16 8 L8 16"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              fill="none"
-            />
-          </svg>
-        </button>
+        <AnimatePresence :initial="false">
+          <Motion
+            v-if="props.modelValue"
+            as="button"
+            type="button"
+            class="m-search-bar__clear"
+            aria-label="Clear"
+            :initial="{ opacity: 0 }"
+            :animate="{ opacity: 1 }"
+            :exit="{ opacity: 0 }"
+            @mousedown.prevent
+            @click="clear"
+          >
+            <!-- SearchCleanup glyph: circle fillAlpha 0.06, X fillAlpha 0.3,
+                 tinted onSurfaceContainerHighest. -->
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <circle cx="12" cy="12" r="11" fill="currentColor" opacity="0.06" />
+              <path
+                d="M8 8 L16 16 M16 8 L8 16"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                fill="none"
+                opacity="0.3"
+              />
+            </svg>
+          </Motion>
+        </AnimatePresence>
       </label>
       <AnimatePresence :initial="false">
         <Motion
           v-if="props.expanded"
           class="m-search-bar__cancel-wrap"
-          :initial="{ opacity: 0, width: 0 }"
-          :animate="{ opacity: 1, width: 'auto' }"
-          :exit="{ opacity: 0, width: 0 }"
+          :initial="{ width: 0 }"
+          :animate="{ width: 'auto' }"
+          :exit="{ width: 0 }"
           :transition="cancelTransition"
         >
           <button type="button" class="m-search-bar__cancel" @click="cancel">
@@ -123,7 +135,7 @@ const cancelTransition = { type: 'spring' as const, stiffness: 400, damping: 34 
         :initial="{ opacity: 0, height: 0 }"
         :animate="{ opacity: 1, height: 'auto' }"
         :exit="{ opacity: 0, height: 0 }"
-        :transition="{ duration: 0.2, ease: 'easeOut' }"
+        :transition="resultsTransition"
       >
         <slot />
       </Motion>
@@ -214,6 +226,10 @@ const cancelTransition = { type: 'spring' as const, stiffness: 400, damping: 34 
   &__cancel-wrap {
     overflow: hidden;
     flex: none;
+    // expandHorizontally(expandFrom = End) + slideInHorizontally: the button is
+    // pinned to the right edge so the width reveal runs right-to-left (no fade).
+    display: flex;
+    justify-content: flex-end;
   }
 
   &__cancel {

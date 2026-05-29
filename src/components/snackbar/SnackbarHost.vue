@@ -37,9 +37,9 @@ const exitTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
           v-for="entry in ordered"
           :key="entry.id"
           class="m-snackbar"
-          :initial="{ opacity: 0, y: 24 }"
-          :animate="{ opacity: 1, y: 0 }"
-          :exit="{ opacity: 0, y: 24 }"
+          :initial="{ opacity: 0, y: '100%' }"
+          :animate="{ opacity: 1, y: '0%' }"
+          :exit="{ opacity: 0, y: '100%' }"
           :transition="enterTransition"
           :exit-transition="exitTransition"
         >
@@ -60,7 +60,7 @@ const exitTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
               aria-label="Dismiss"
               @click="dismissSnackbar(entry.id, 'dismissed')"
             >
-              <svg viewBox="0 0 24 24" width="16" height="16">
+              <svg viewBox="0 0 24 24" width="24" height="24">
                 <path
                   d="M6 6 L18 18 M18 6 L6 18"
                   stroke="currentColor"
@@ -108,7 +108,8 @@ const exitTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
     border-radius: 12px;
     background: var(--m-color-surface-container-highest);
     color: var(--m-color-on-surface-container);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    // dropShadow(radius 1, spread 0.6, dividerLine, offset 0,1).
+    box-shadow: 0 1px 1px 0.6px var(--m-color-divider-line);
   }
 
   &__message {
@@ -126,7 +127,8 @@ const exitTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
     margin-left: 8px;
     padding: 6px 8px;
     border: 0;
-    border-radius: 8px;
+    // TextButton uses ButtonDefaults corner radius (16).
+    border-radius: 16px;
     background: transparent;
     color: var(--m-color-on-surface-container-highest);
     font-family: inherit;
