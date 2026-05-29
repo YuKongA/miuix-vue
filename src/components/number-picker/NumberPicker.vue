@@ -85,7 +85,14 @@ const renderItems = computed(() => {
     }
     const d = i - centerItemOffset
     const nd = Math.min(Math.abs(d) / (h + 0.5), 1)
-    const alpha = (1 - nd) * (1 - nd * 0.5)
+    // graphicsLayer.alpha = (1-nd)(1 - 0.5*nd). When enabled, the text color
+    // also lerps onSurface(α1) → onSurfaceSecondary(α0.8), i.e. an extra
+    // (1 - 0.2*nd) alpha factor; the two multiply. (The rgb difference is nil
+    // in light and ~242→255 in dark — negligible, kept as the onSurface var.)
+    // Disabled uses a single flat colour, so only the geometric alpha applies.
+    const alpha = props.disabled
+      ? (1 - nd) * (1 - nd * 0.5)
+      : (1 - nd) * (1 - nd * 0.5) * (1 - 0.2 * nd)
     const scale = 1 - 0.2 * nd
     const y = d * ih
     out.push({
@@ -204,7 +211,12 @@ function onWheel(e: WheelEvent): void {
 
   &--disabled {
     cursor: not-allowed;
-    opacity: 0.6;
+  }
+
+  // Disabled: every item uses the flat disabledOnSecondary token (not a
+  // blanket wheel opacity), matching NumberPickerColors.
+  &--disabled &__item {
+    color: var(--m-color-disabled-on-secondary);
   }
 
   &__item {

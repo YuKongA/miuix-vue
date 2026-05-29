@@ -66,7 +66,8 @@ const infSize = computed(() => props.size ?? INF_SIZE)
 const infStroke = computed(() => props.strokeWidth ?? INF_STROKE)
 const infR = computed(() => (infSize.value - infStroke.value) / 2)
 const infOrbitR = computed(() => infR.value - 2 * INF_DOT)
-const infColor = computed(() => props.color ?? 'gray')
+// Source default Color.Gray = 0xFF888888 (CSS `gray` is #808080 — not the same).
+const infColor = computed(() => props.color ?? '#888888')
 </script>
 
 <template>
@@ -78,7 +79,10 @@ const infColor = computed(() => props.color ?? 'gray')
     role="progressbar"
   >
     <template v-if="isIndeterminate">
-      <span class="m-progress__linear-seg m-progress__linear-seg--indet" />
+      <!-- A 45%-wide bar sweeps 0→100%; the piece exiting the right re-enters
+           from the left (overflow clips the rest), matching drawIndeterminateSegment. -->
+      <span class="m-progress__linear-seg m-progress__linear-seg--main" />
+      <span class="m-progress__linear-seg m-progress__linear-seg--wrap" />
     </template>
     <span v-else class="m-progress__linear-fill" :style="{ width: linearFillWidth }" />
   </div>
@@ -158,17 +162,25 @@ const infColor = computed(() => props.color ?? 'gray')
     height: 100%;
     border-radius: 9999px;
     background: var(--m-color-primary);
-    transition: width 120ms linear;
+    // Source draws the determinate width directly each frame (no implicit tween).
   }
 
-  &__linear-seg--indet {
+  &__linear-seg {
     position: absolute;
     top: 0;
     bottom: 0;
     width: 45%;
     border-radius: 9999px;
     background: var(--m-color-primary);
-    animation: m-progress-linear-indet 1250ms linear infinite;
+    animation-duration: 1250ms;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+  &__linear-seg--main {
+    animation-name: m-progress-linear-main;
+  }
+  &__linear-seg--wrap {
+    animation-name: m-progress-linear-wrap;
   }
 
   &__circ-bg {
@@ -191,13 +203,23 @@ const infColor = computed(() => props.color ?? 'gray')
   }
 }
 
-@keyframes m-progress-linear-indet {
-  // 45%-wide segment sweeping across with a wrap-around look.
+// Main bar: left 0 → 100% (its right tail is clipped past 100%).
+@keyframes m-progress-linear-main {
   0% {
-    left: -45%;
+    left: 0%;
   }
   100% {
     left: 100%;
+  }
+}
+// Wrap bar: trails one period behind (-100% → 0%), so the slice exiting the
+// right re-enters at the left — overflow:hidden clips the off-screen remainder.
+@keyframes m-progress-linear-wrap {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 0%;
   }
 }
 

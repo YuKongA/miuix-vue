@@ -85,6 +85,34 @@ const tabWidth = computed(() => {
 
 const indicatorOffset = computed(() => props.modelValue * (tabWidth.value + defaults.value.spacing))
 
+// Auto-scroll the selected tab toward the centre (TabRow.kt lines 126-134):
+//   scrollToItem(index, -(availableWidth - tabWidth)/2)
+// → the tab's start sits centreOffset into the viewport. Instant on first
+// settle, smooth thereafter.
+const scrollRef = ref<HTMLElement | null>(null)
+// Mirrors lastSettledSelectedTabIndex: snap on first settle and on geometry
+// changes for the already-selected tab; animate only when the selection moves.
+let lastSettledIndex = -1
+
+function centerSelected(): void {
+  const el = scrollRef.value
+  if (!el) return
+  const centerOffset = (availableWidth.value - tabWidth.value) / 2
+  const target = props.modelValue * (tabWidth.value + defaults.value.spacing) - centerOffset
+  const max = el.scrollWidth - el.clientWidth
+  const animate = lastSettledIndex >= 0 && lastSettledIndex !== props.modelValue
+  el.scrollTo({
+    left: Math.max(0, Math.min(max, target)),
+    behavior: animate ? 'smooth' : 'auto',
+  })
+  lastSettledIndex = props.modelValue
+}
+
+watch(() => [props.modelValue, tabWidth.value, availableWidth.value], centerSelected, {
+  flush: 'post',
+})
+onMounted(centerSelected)
+
 function select(index: number): void {
   if (index !== props.modelValue) emit('update:modelValue', index)
 }
@@ -97,7 +125,7 @@ function select(index: number): void {
     :class="{ 'm-tab-row--contour': props.contour }"
     :style="{ height: `${defaults.height}px`, '--m-tab-radius': `${defaults.radius}px` }"
   >
-    <div class="m-tab-row__scroll" :style="{ padding: `${defaults.pad}px` }">
+    <div ref="scrollRef" class="m-tab-row__scroll" :style="{ padding: `${defaults.pad}px` }">
       <div class="m-tab-row__track" :style="{ gap: `${defaults.spacing}px` }">
         <Motion
           class="m-tab-row__indicator"
