@@ -13,6 +13,8 @@ import {
   MiuixColorPicker,
   MiuixDialog,
   MiuixDropdownPreference,
+  MiuixIcon,
+  MiuixIconButton,
   MiuixInput,
   MiuixNumberPicker,
   MiuixProgressIndicator,
@@ -31,6 +33,7 @@ import {
   showSnackbar,
   type MiuixDropdownItem,
 } from '@/index'
+import { Close, Ok } from '@/icons/extended'
 
 // SearchBar
 const searchQuery = ref('')
@@ -712,10 +715,14 @@ const pickedColor = ref('rgb(52, 130, 255)')
 
     <MiuixBottomSheet v-model="bottomSheetOpen" title="BottomSheet">
       <template #start-action>
-        <MiuixButton @click="bottomSheetOpen = false">Cancel</MiuixButton>
+        <MiuixIconButton aria-label="Cancel" @click="bottomSheetOpen = false">
+          <MiuixIcon :icon="Close" :size="24" />
+        </MiuixIconButton>
       </template>
       <template #end-action>
-        <MiuixButton type="primary" @click="bottomSheetOpen = false">OK</MiuixButton>
+        <MiuixIconButton aria-label="Confirm" @click="bottomSheetOpen = false">
+          <MiuixIcon :icon="Ok" :size="24" />
+        </MiuixIconButton>
       </template>
       <MiuixSmallTitle text="Behavior Settings" />
       <MiuixCard style="--m-card-color: var(--m-color-secondary-container)" class="ex-mb12">
