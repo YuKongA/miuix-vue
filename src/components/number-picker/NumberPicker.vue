@@ -54,6 +54,18 @@ const coerced = computed(() => Math.min(props.max, Math.max(props.min, props.mod
 const currentIndex = computed(() => coerced.value - props.min)
 const totalHeight = computed(() => props.itemHeight * props.visibleItemCount)
 
+// The wheel sizes to its widest label so the scroll/drag hit area is the digit
+// column only (not a full-width strip). Items are absolutely positioned, so an
+// invisible sizer carrying the longest label gives the container its width.
+const widestLabel = computed(() => {
+  let widest = ''
+  for (let v = props.min; v <= props.max; v++) {
+    const s = props.label(v)
+    if (s.length > widest.length) widest = s
+  }
+  return widest || '0'
+})
+
 const offset = ref(0)
 const offsetMv = motionValue(0)
 offsetMv.on('change', (v: number) => {
@@ -179,19 +191,27 @@ function onWheel(e: WheelEvent): void {
     class="m-number-picker"
     :class="{ 'm-number-picker--disabled': props.disabled }"
     :style="{ height: `${totalHeight}px` }"
-    @pointerdown="onPointerDown"
-    @pointermove="onPointerMove"
-    @pointerup="onPointerUp"
-    @pointercancel="onPointerUp"
-    @wheel="onWheel"
   >
+    <!-- The wheel is content-width and centered, so wheel-scroll / drag only
+         act over the digit column — not the full (weighted) picker width. -->
     <div
-      v-for="item in renderItems"
-      :key="item.key"
-      class="m-number-picker__item"
-      :style="item.style"
+      class="m-number-picker__wheel"
+      @pointerdown="onPointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerUp"
+      @wheel="onWheel"
     >
-      {{ item.text }}
+      <!-- Invisible sizer: establishes the content width (digit column). -->
+      <span class="m-number-picker__sizer" aria-hidden="true">{{ widestLabel }}</span>
+      <div
+        v-for="item in renderItems"
+        :key="item.key"
+        class="m-number-picker__item"
+        :style="item.style"
+      >
+        {{ item.text }}
+      </div>
     </div>
   </div>
 </template>
@@ -199,18 +219,38 @@ function onWheel(e: WheelEvent): void {
 <style lang="scss">
 .m-number-picker {
   position: relative;
-  width: 100%;
+  // Fills the space it is given (e.g. weight(1f) in the source); the wheel is
+  // centered within so the digits sit centered in that column.
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
   overflow: hidden;
-  touch-action: none;
-  user-select: none;
-  cursor: grab;
 
-  &:active {
-    cursor: grabbing;
+  &__wheel {
+    position: relative;
+    height: 100%;
+    // Content-width via the sizer → the scroll/drag hit area is the digits only.
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
   }
 
-  &--disabled {
+  &--disabled &__wheel {
     cursor: not-allowed;
+  }
+
+  &__sizer {
+    display: block;
+    visibility: hidden;
+    font-size: var(--m-text-title1-size);
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
   }
 
   // Disabled: every item uses the flat disabledOnSecondary token (not a
