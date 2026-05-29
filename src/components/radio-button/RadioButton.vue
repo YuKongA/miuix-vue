@@ -78,7 +78,14 @@ function onUp(): void {
     @keydown.space.prevent="select"
     @keydown.enter.prevent="select"
   >
-    <svg class="m-radio__mark" viewBox="0 0 26 26" :style="{ opacity: props.modelValue ? 1 : 0 }">
+    <svg
+      class="m-radio__mark"
+      viewBox="0 0 26 26"
+      :style="{
+        opacity: props.modelValue ? 1 : 0,
+        transitionDuration: props.modelValue ? '10ms' : '150ms',
+      }"
+    >
       <path
         :d="CHECK_PATH"
         fill="none"

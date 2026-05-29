@@ -5,15 +5,16 @@
 // Ported from miuix-ui/.../basic/Checkbox.kt.
 //
 // 26dp circle. Background animates secondary↔primary (tween 300ms,
-// FastOutSlowInEasing = cubic-bezier(.4,0,.2,1)). The checkmark is the source's
-// 3-point polyline mapped into the 26px box (viewport 23, stroke = size*0.09),
-// round cap/join. Checked geometry uses the source trim window [0.186, 0.803];
-// the tips are pre-trimmed and the stroke "draws on" via dashoffset (~200ms).
-// Indeterminate collapses the polyline to a centered horizontal dash
-// (crossCenterGravitation = 1). Press applies SinkFeedback(0.85, spring(0.99, 986.96)).
+// FastOutSlowInEasing = cubic-bezier(.4,0,.2,1)); foreground (stroke) likewise.
+// The checkmark is the source's 3-point polyline mapped into the 26px box
+// (viewport 23, stroke = size*0.09), round cap/join, trim window [0.186, 0.803].
+// crossCenterGravitation morphs the polyline toward the centre to become the
+// indeterminate dash; it animates (200ms to Indeterminate / 150ms away,
+// FastOutSlowIn). Check alpha tweens 10ms in / 150ms out. Press applies
+// SinkFeedback(0.85, spring(0.99, 986.96)).
 
-import { Motion } from 'motion-v'
-import { computed, ref } from 'vue'
+import { animate, Motion, motionValue } from 'motion-v'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { folmeSpring } from '../../anim'
 
 defineOptions({ name: 'MiuixCheckbox' })
@@ -44,13 +45,65 @@ const pressed = ref(false)
 
 const checked = computed(() => props.modelValue || props.indeterminate)
 
-// Pre-trimmed checkmark (trim window [0.186, 0.803]) in the 26px box.
-const CHECK_PATH = 'M8.576 13.66 L11.643 16.843 L17.499 9.293'
-// Gravitated (indeterminate) centered dash, same trim window.
-const DASH_PATH = 'M8.364 13 L17.36 13'
+// 3-point checkmark in the 26px box, and the centre it gravitates toward.
 const STROKE_WIDTH = 26 * 0.09 // 2.34
+const S = { x: 5.652, y: 10.626 }
+const M = { x: 11.643, y: 16.843 }
+const E = { x: 20.235, y: 5.765 }
+const CENTER = 13
+const TRIM_START = 0.186
+const TRIM_END = 0.803
 
-const checkPath = computed(() => (props.indeterminate ? DASH_PATH : CHECK_PATH))
+const lerp = (a: number, b: number, t: number): number => a + (b - a) * t
+
+// crossCenterGravitation: 0 = check, 1 = centred dash (indeterminate).
+const gravMv = motionValue(props.indeterminate ? 1 : 0)
+const grav = ref(props.indeterminate ? 1 : 0)
+gravMv.on('change', (v: number) => (grav.value = v))
+let gravAnim: { stop: () => void } | null = null
+watch(
+  () => props.indeterminate,
+  (ind) => {
+    gravAnim?.stop()
+    // 200ms toward Indeterminate, 150ms away (FastOutSlowInEasing).
+    gravAnim = animate(gravMv, ind ? 1 : 0, {
+      duration: ind ? 0.2 : 0.15,
+      ease: [0.4, 0, 0.2, 1],
+    })
+  },
+)
+onUnmounted(() => gravAnim?.stop())
+
+// Trimmed [0.186, 0.803] path through the gravitated points.
+const checkPath = computed(() => {
+  const g = grav.value
+  const sX = S.x
+  const sY = lerp(S.y, CENTER, g)
+  const mX = lerp(M.x, CENTER, g)
+  const mY = lerp(M.y, CENTER, g)
+  const eX = E.x
+  const eY = lerp(E.y, CENTER, g)
+  const len1 = Math.hypot(mX - sX, mY - sY)
+  const len2 = Math.hypot(eX - mX, eY - mY)
+  const total = len1 + len2 || 1
+  const pointAt = (dist: number): [number, number] => {
+    if (dist <= len1) {
+      const r = len1 ? dist / len1 : 0
+      return [lerp(sX, mX, r), lerp(sY, mY, r)]
+    }
+    const r = len2 ? (dist - len1) / len2 : 0
+    return [lerp(mX, eX, r), lerp(mY, eY, r)]
+  }
+  const dStart = total * TRIM_START
+  const dEnd = total * TRIM_END
+  const [p0x, p0y] = pointAt(dStart)
+  const [p1x, p1y] = pointAt(dEnd)
+  const f = (n: number): string => n.toFixed(3)
+  if (dStart < len1 && dEnd > len1) {
+    return `M${f(p0x)} ${f(p0y)} L${f(mX)} ${f(mY)} L${f(p1x)} ${f(p1y)}`
+  }
+  return `M${f(p0x)} ${f(p0y)} L${f(p1x)} ${f(p1y)}`
+})
 
 const bgColor = computed(() => {
   if (props.disabled) {
@@ -65,6 +118,11 @@ const fgColor = computed(() => {
 })
 
 const scale = computed(() => (pressed.value && !props.disabled ? 0.85 : 1))
+// Check alpha: 10ms appearing, 150ms disappearing.
+const markStyle = computed(() => ({
+  opacity: checked.value ? 1 : 0,
+  transitionDuration: checked.value ? '10ms' : '150ms',
+}))
 
 function toggle(): void {
   if (props.disabled) return
@@ -101,7 +159,7 @@ function onUp(): void {
     @keydown.enter.prevent="toggle"
   >
     <span class="m-checkbox__bg" :style="{ background: bgColor }" />
-    <svg class="m-checkbox__mark" viewBox="0 0 26 26" :style="{ opacity: checked ? 1 : 0 }">
+    <svg class="m-checkbox__mark" viewBox="0 0 26 26" :style="markStyle">
       <path
         :d="checkPath"
         fill="none"
@@ -151,15 +209,18 @@ function onUp(): void {
     inset: 0;
     width: 100%;
     height: 100%;
-    // alpha in: 10ms, out: 150ms (FastOutSlowInEasing)
+    // alpha: 10ms in / 150ms out (duration set inline per direction).
     transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   &__path {
+    // foreground color tween 300ms (Checkbox.kt animateColor).
+    transition:
+      stroke-dashoffset 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      stroke 300ms cubic-bezier(0.4, 0, 0.2, 1);
     // "draw on": dash window of length 1 (pathLength), offset hides it.
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
-    transition: stroke-dashoffset 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
     &--drawn {
       stroke-dashoffset: 0;
