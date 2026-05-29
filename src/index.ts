@@ -33,6 +33,8 @@ export { MiuixSuperArrow } from './components/super-arrow'
 export { MiuixSuperCheckbox } from './components/super-checkbox'
 export { MiuixTabRow } from './components/tab-row'
 export { MiuixProgressIndicator } from './components/progress-indicator'
+export { MiuixSuperDropdown, type MiuixDropdownItem } from './components/super-dropdown'
+export { MiuixSuperSpinner } from './components/super-spinner'
 
 export { IconArrowRight, IconArrowUpDown, IconCheck, IconSearch } from './icons'
 
