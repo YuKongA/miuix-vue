@@ -6,6 +6,7 @@
 // needed. SnackbarHost stays a standalone teleport singleton.
 import { computed, ref } from 'vue'
 import {
+  MiuixIcon,
   MiuixIconButton,
   MiuixNavigationBar,
   MiuixSnackbarHost,
@@ -13,6 +14,7 @@ import {
   useTheme,
   type MiuixNavigationItem,
 } from '@/index'
+import { Edit, GridView, Image, Settings, Theme, Tune } from '@/icons/extended'
 import MainPage from './pages/MainPage.vue'
 import IconPage from './pages/IconPage.vue'
 import ColorPage from './pages/ColorPage.vue'
@@ -27,13 +29,12 @@ function toggleTheme(): void {
 const pages = [MainPage, IconPage, ColorPage, TextStylePage, SettingsPage]
 const titles = ['Home', 'Icon', 'Color', 'TextStyle', 'Settings']
 const navItems: MiuixNavigationItem[] = titles.map((label) => ({ label }))
+// Per-tab glyphs from the extended pack.
+const navIcons = [Tune, GridView, Image, Edit, Settings]
 
 const navIndex = ref(0)
 const activePage = computed(() => pages[navIndex.value])
 const activeTitle = computed(() => titles[navIndex.value])
-
-// Simple per-tab glyphs (the miuix nav icons aren't part of the ported set).
-const glyphs = ['▤', '✦', '◑', 'A', '⚙']
 </script>
 
 <template>
@@ -42,7 +43,7 @@ const glyphs = ['▤', '✦', '◑', 'A', '⚙']
       <MiuixTopAppBar :title="activeTitle" class="app__bar">
         <template #actions>
           <MiuixIconButton aria-label="Toggle theme" @click="toggleTheme">
-            <span class="app__theme-glyph">{{ theme === 'light' ? '☾' : '☀' }}</span>
+            <MiuixIcon :icon="Theme" :size="24" />
           </MiuixIconButton>
         </template>
       </MiuixTopAppBar>
@@ -59,7 +60,7 @@ const glyphs = ['▤', '✦', '◑', 'A', '⚙']
     <div class="app__bottom">
       <MiuixNavigationBar v-model="navIndex" :items="navItems">
         <template #icon="{ index }">
-          <span class="app__nav-glyph">{{ glyphs[index] }}</span>
+          <MiuixIcon :icon="navIcons[index]" :size="26" />
         </template>
       </MiuixNavigationBar>
     </div>
@@ -111,16 +112,6 @@ body {
   &__bar,
   .m-navigation-bar {
     background: var(--m-color-surface);
-  }
-
-  &__theme-glyph {
-    font-size: 20px;
-    line-height: 1;
-  }
-
-  &__nav-glyph {
-    font-size: 20px;
-    line-height: 1;
   }
 }
 
