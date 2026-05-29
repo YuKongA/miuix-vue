@@ -86,10 +86,16 @@ const cardStyle = computed(() => ({
   cursor: isInteractive.value ? 'pointer' : undefined,
 }))
 
-// Perspective on the wrapper keeps the camera centred (perspective-origin
-// 50/50, like Compose's centred camera); the pivot is the card's transform-origin.
+// Perspective lives on the wrapper. The camera (perspective-origin) sits at the
+// same pivot corner as the card's transform-origin — Android's RenderNode places
+// the camera at the pivot — so the pressed corner lifts toward the viewer.
 const wrapperStyle = computed(() =>
-  props.pressFeedback === 'tilt' ? { perspective: tiltPerspective.value } : undefined,
+  props.pressFeedback === 'tilt'
+    ? {
+        perspective: tiltPerspective.value,
+        perspectiveOrigin: `${tiltOriginX.value} ${tiltOriginY.value}`,
+      }
+    : undefined,
 )
 
 let pressTimer: ReturnType<typeof setTimeout> | null = null
@@ -181,7 +187,9 @@ onUnmounted(clearPressTimer)
 
 .m-card {
   position: relative;
-  display: block;
+  // miuix Card content is a ColumnScope — children stack vertically.
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border-radius: var(--m-radius-md);
   // Theme via CSS variables (rule #2); defaults are the surfaceContainer tokens.

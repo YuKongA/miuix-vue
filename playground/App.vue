@@ -101,6 +101,9 @@ body {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    // The Card tilt's 3D pop-out is visual overflow; clip it horizontally so it
+    // never spawns a transient page scrollbar (vertical scroll still works).
+    overflow-x: hidden;
   }
 
   // Bars + scroll body sit on the surface backdrop behind the cards.
