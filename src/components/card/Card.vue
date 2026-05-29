@@ -118,7 +118,8 @@ function onClick(event: MouseEvent): void {
 // with depth. cameraDistance = 12 * density in miuix → perspective: 12px in
 // CSS logical pixels (1 dp = 1 CSS px).
 .m-card-wrapper {
-  display: inline-block;
+  // Block by default so cards fill the available width (miuix fillMaxWidth).
+  display: block;
 
   &--3d {
     perspective: 12px;
@@ -127,6 +128,7 @@ function onClick(event: MouseEvent): void {
 
 .m-card {
   display: block;
+  overflow: hidden;
   border-radius: var(--m-radius-md);
   background: var(--m-color-surface-container);
   color: var(--m-color-on-surface-container);

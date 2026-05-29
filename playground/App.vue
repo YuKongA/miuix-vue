@@ -1,273 +1,692 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+// miuix-vue example — mirrors the miuix `example/` MainPage section list.
+// Each section is a SmallTitle + Card of rows, inside a Scaffold-like layout
+// (Home top bar + scrolling content column).
+import { onMounted, onUnmounted, ref } from 'vue'
 import {
+  MiuixBasicComponent,
   MiuixButton,
   MiuixCard,
+  MiuixCheckbox,
   MiuixDialog,
+  MiuixDivider,
+  MiuixIconButton,
   MiuixInput,
+  MiuixProgressIndicator,
   MiuixRangeSlider,
   MiuixSlider,
+  MiuixSmallTitle,
+  MiuixSuperArrow,
+  MiuixSuperCheckbox,
+  MiuixSuperDropdown,
+  MiuixSuperRadioButton,
+  MiuixSuperSpinner,
+  MiuixSuperSwitch,
   MiuixSwitch,
+  MiuixTabRow,
+  MiuixText,
+  type MiuixDropdownItem,
   useTheme,
 } from '@/index'
 
-const inputValue = ref('')
-const switchA = ref(false)
-const switchB = ref(true)
-const sliderValue = ref(35)
-const sliderStepped = ref(20)
-const sliderKeyPoints = ref(35)
-const sliderVertical = ref(60)
-const sliderVerticalReverse = ref(40)
-const sliderRange = ref<[number, number]>([20, 70])
-const sliderRangeStepped = ref<[number, number]>([20, 60])
-const dialogOpen = ref(false)
-
 const { theme, setTheme } = useTheme()
-
 function toggleTheme(): void {
   setTheme(theme.value === 'light' ? 'dark' : 'light')
+}
+
+// Checkbox
+const cbA = ref(false)
+const cbB = ref(true)
+const cbIndeterminate = ref(true)
+const superCbEnd = ref(false)
+const superCb = ref(false)
+
+// RadioButton
+const radioIndex = ref(0)
+
+// Switch
+const swA = ref(false)
+const swB = ref(true)
+const superSwitchExpand = ref(false)
+const superSwitch = ref(false)
+
+// Arrow
+const volume = ref(50)
+const volumeDialogOpen = ref(false)
+const volumeText = ref('50')
+
+// Dialog
+const dialogOpen = ref(false)
+
+// Dropdown / Spinner
+const dropdownIndex = ref(0)
+const dropdownOptions = ['Option 1', 'Option 2', 'Option 3', 'Option 4']
+const spinnerIndex = ref(0)
+const spinnerOptions: MiuixDropdownItem[] = [
+  { text: 'Option 1', summary: 'Red', color: '#FF5B29' },
+  { text: 'Option 2', summary: 'Green', color: '#36D167' },
+  { text: 'Option 3', summary: 'Blue', color: '#3482FF' },
+  { text: 'Option 4', summary: 'Yellow', color: '#FFB21D' },
+]
+
+// Button
+const cancelText = ref('Cancel')
+const submitText = ref('Submit')
+let clickCount = 0
+let submitCount = 0
+function onCancel(): void {
+  clickCount += 1
+  cancelText.value = `Click: ${clickCount}`
+}
+function onSubmit(): void {
+  submitCount += 1
+  submitText.value = `Click: ${submitCount}`
+}
+
+// ProgressIndicator
+const animatedProgress = ref(0)
+const progressValues: Array<number | null> = [0, 0.25, 0.5, 0.75, 1, null]
+let rafId = 0
+let start = 0
+function tick(t: number): void {
+  if (!start) start = t
+  const phase = ((t - start) % 2000) / 1000
+  animatedProgress.value = phase <= 1 ? phase : 2 - phase
+  rafId = requestAnimationFrame(tick)
+}
+onMounted(() => {
+  rafId = requestAnimationFrame(tick)
+})
+onUnmounted(() => cancelAnimationFrame(rafId))
+
+// TextField
+const text1 = ref('')
+const text2 = ref('')
+const text3 = ref('')
+const text4 = ref('')
+
+// Slider
+const sliderNormal = ref(30)
+const sliderSteps = ref(100)
+const sliderStepPoints = ref(5)
+const sliderCustom = ref(25)
+const sliderDisabled = ref(70)
+const rangeNormal = ref<[number, number]>([20, 80])
+const rangeSteps = ref<[number, number]>([2, 8])
+const rangeCustom = ref<[number, number]>([20, 80])
+const rangeDisabled = ref<[number, number]>([30, 70])
+const vSlider1 = ref(30)
+const vSlider2 = ref(5)
+const vSlider3 = ref(5)
+const vSlider4 = ref(50)
+const vSliderDisabled = ref(70)
+
+// TabRow
+const tab1 = ref(0)
+const tab2 = ref(0)
+const tabs1 = ['Tab 1', 'Tab 2', 'Tab 3']
+const tabs2 = ['Tab 1', 'Tab 2', 'Tab 3', 'Tab 4', 'Tab 5', 'Tab 6']
+
+function openVolumeDialog(): void {
+  volumeText.value = String(Math.round(volume.value))
+  volumeDialogOpen.value = true
+}
+function confirmVolume(): void {
+  const n = Number(volumeText.value)
+  if (!Number.isNaN(n)) volume.value = Math.min(100, Math.max(0, n))
+  volumeDialogOpen.value = false
 }
 </script>
 
 <template>
-  <main class="playground">
-    <header class="playground__header">
-      <h1>miuix-vue playground</h1>
-      <MiuixButton type="primary" @click="toggleTheme"> Theme: {{ theme }} </MiuixButton>
+  <div class="app">
+    <header class="app__bar">
+      <div class="app__bar-inner">
+        <MiuixText type="title3" weight="medium">Home</MiuixText>
+        <MiuixIconButton aria-label="Toggle theme" @click="toggleTheme">
+          <span class="app__theme-glyph">{{ theme === 'light' ? '☾' : '☀' }}</span>
+        </MiuixIconButton>
+      </div>
     </header>
 
-    <section class="playground__section">
-      <h2>Button</h2>
-      <div class="row">
-        <MiuixButton>Default</MiuixButton>
-        <MiuixButton type="primary">Primary</MiuixButton>
-        <MiuixButton disabled>Disabled</MiuixButton>
-        <MiuixButton type="primary" disabled>Primary disabled</MiuixButton>
-      </div>
-    </section>
+    <main class="app__scroll">
+      <div class="app__content">
+        <!-- Basic Component -->
+        <MiuixSmallTitle text="Basic Component" />
+        <MiuixCard class="section-card">
+          <MiuixBasicComponent title="Title" summary="Summary">
+            <template #start><MiuixText>Start</MiuixText></template>
+            <template #end>
+              <MiuixText type="body2" color="var(--m-color-on-surface-variant-actions)"
+                >End1</MiuixText
+              >
+              <span style="width: 8px"></span>
+              <MiuixText type="body2" color="var(--m-color-on-surface-variant-actions)"
+                >End2</MiuixText
+              >
+            </template>
+          </MiuixBasicComponent>
+          <MiuixBasicComponent title="Title" summary="Summary" disabled>
+            <template #start>
+              <MiuixText color="var(--m-color-disabled-on-secondary-variant)">Start</MiuixText>
+            </template>
+            <template #end>
+              <MiuixText type="body2" color="var(--m-color-disabled-on-secondary-variant)"
+                >End1</MiuixText
+              >
+              <span style="width: 8px"></span>
+              <MiuixText type="body2" color="var(--m-color-disabled-on-secondary-variant)"
+                >End2</MiuixText
+              >
+            </template>
+          </MiuixBasicComponent>
+        </MiuixCard>
 
-    <section class="playground__section">
-      <h2>Slider</h2>
-      <div class="stack">
-        <div class="slider-row">
-          <MiuixSlider v-model="sliderValue" />
-          <span class="echo">value: {{ Math.round(sliderValue) }}</span>
-        </div>
-        <div class="slider-row">
-          <MiuixSlider v-model="sliderStepped" :step="10" />
-          <span class="echo">stepped (step=10): {{ sliderStepped }}</span>
-        </div>
-        <div class="slider-row">
-          <MiuixSlider v-model="sliderValue" disabled />
-          <span class="echo">disabled</span>
-        </div>
-        <div class="slider-row">
-          <MiuixSlider
-            v-model="sliderKeyPoints"
-            :key-points="[0, 25, 50, 75, 100]"
-            :magnet-threshold="0.04"
+        <!-- Checkbox -->
+        <MiuixSmallTitle text="Checkbox" />
+        <MiuixCard class="section-card">
+          <div class="control-row">
+            <MiuixCheckbox v-model="cbA" />
+            <MiuixCheckbox v-model="cbB" />
+            <MiuixCheckbox v-model="cbIndeterminate" indeterminate />
+            <MiuixCheckbox :model-value="false" disabled />
+            <MiuixCheckbox :model-value="true" disabled />
+          </div>
+          <MiuixSuperCheckbox v-model="superCbEnd" location="end" title="Checkbox">
+            <template #end>
+              <MiuixText type="body2" color="var(--m-color-on-surface-variant-actions)">{{
+                superCbEnd
+              }}</MiuixText>
+            </template>
+          </MiuixSuperCheckbox>
+          <MiuixSuperCheckbox v-model="superCb" title="Checkbox" :summary="`State: ${superCb}`" />
+          <MiuixSuperCheckbox :model-value="true" disabled title="Disabled Checkbox" />
+        </MiuixCard>
+
+        <!-- RadioButton -->
+        <MiuixSmallTitle text="RadioButton" />
+        <MiuixCard class="section-card">
+          <MiuixSuperRadioButton
+            :model-value="radioIndex === 0"
+            title="Option A"
+            :summary="`Selected: ${radioIndex === 0}`"
+            @select="radioIndex = 0"
           />
-          <span class="echo">key-points + magnet (0.04): {{ Math.round(sliderKeyPoints) }}</span>
-        </div>
-        <div class="slider-row">
-          <MiuixSlider v-model="sliderStepped" :step="10" show-key-points />
-          <span class="echo">stepped + show-key-points: {{ sliderStepped }}</span>
-        </div>
-        <div class="slider-row slider-row--vertical">
-          <div class="vertical-pair">
-            <MiuixSlider
-              v-model="sliderVertical"
-              orientation="vertical"
-              :step="10"
-              show-key-points
-            />
-            <MiuixSlider
-              v-model="sliderVerticalReverse"
-              orientation="vertical"
-              reverse-direction
-              :step="10"
-              show-key-points
+          <MiuixSuperRadioButton
+            :model-value="radioIndex === 1"
+            title="Option B"
+            :summary="`Selected: ${radioIndex === 1}`"
+            @select="radioIndex = 1"
+          />
+          <MiuixSuperRadioButton
+            :model-value="radioIndex === 2"
+            title="Option C"
+            :summary="`Selected: ${radioIndex === 2}`"
+            @select="radioIndex = 2"
+          />
+          <MiuixSuperRadioButton :model-value="true" disabled title="Disabled RadioButton" />
+        </MiuixCard>
+
+        <!-- Switch -->
+        <MiuixSmallTitle text="Switch" />
+        <MiuixCard class="section-card">
+          <div class="control-row control-row--start">
+            <MiuixSwitch v-model="swA" />
+            <MiuixSwitch v-model="swB" />
+            <MiuixSwitch :model-value="false" disabled />
+            <MiuixSwitch :model-value="true" disabled />
+          </div>
+          <MiuixSuperSwitch
+            v-model="superSwitchExpand"
+            title="Switch"
+            summary="Click to expand a Switch"
+          />
+          <MiuixSuperSwitch v-if="superSwitchExpand" v-model="superSwitch" title="Switch">
+            <template #end>
+              <MiuixText type="body2" color="var(--m-color-on-surface-variant-actions)">{{
+                superSwitch
+              }}</MiuixText>
+            </template>
+          </MiuixSuperSwitch>
+          <MiuixSuperSwitch :model-value="true" disabled title="Disabled Switch" />
+        </MiuixCard>
+
+        <!-- Arrow -->
+        <MiuixSmallTitle text="Arrow" />
+        <MiuixCard class="section-card">
+          <MiuixSuperArrow title="Arrow" @click="() => {}">
+            <template #end>
+              <MiuixText type="body2" color="var(--m-color-on-surface-variant-actions)"
+                >End</MiuixText
+              >
+            </template>
+          </MiuixSuperArrow>
+          <MiuixSuperArrow
+            title="Arrow + Slider + Dialog"
+            :hold-down="volumeDialogOpen"
+            @click="openVolumeDialog"
+          >
+            <template #end>
+              <MiuixText type="body2" color="var(--m-color-on-surface-variant-actions)"
+                >{{ Math.round(volume) }}%</MiuixText
+              >
+            </template>
+            <template #bottom>
+              <MiuixSlider v-model="volume" />
+            </template>
+          </MiuixSuperArrow>
+          <MiuixSuperArrow title="Disabled Arrow" disabled>
+            <template #end>
+              <MiuixText type="body2" color="var(--m-color-disabled-on-secondary-variant)"
+                >End</MiuixText
+              >
+            </template>
+          </MiuixSuperArrow>
+        </MiuixCard>
+
+        <!-- Dialog -->
+        <MiuixSmallTitle text="Dialog" />
+        <MiuixCard class="section-card section-card--pad">
+          <MiuixButton type="primary" @click="dialogOpen = true">Show Dialog</MiuixButton>
+        </MiuixCard>
+
+        <!-- Dropdown -->
+        <MiuixSmallTitle text="Dropdown" />
+        <MiuixCard class="section-card">
+          <MiuixSuperDropdown
+            v-model="dropdownIndex"
+            title="Dropdown"
+            :summary="`Selected: ${dropdownOptions[dropdownIndex]}`"
+            :items="dropdownOptions"
+          />
+          <MiuixSuperDropdown
+            :model-value="0"
+            disabled
+            title="Disabled Dropdown"
+            :items="['Option 1']"
+          />
+        </MiuixCard>
+
+        <!-- Spinner -->
+        <MiuixSmallTitle text="Spinner" />
+        <MiuixCard class="section-card">
+          <MiuixSuperSpinner
+            v-model="spinnerIndex"
+            title="Spinner"
+            :summary="spinnerOptions[spinnerIndex]?.summary"
+            :items="spinnerOptions"
+          />
+          <MiuixSuperSpinner
+            :model-value="0"
+            disabled
+            title="Disabled Spinner"
+            :items="[{ text: 'Option 5' }]"
+          />
+        </MiuixCard>
+
+        <!-- Button -->
+        <MiuixSmallTitle text="Button" />
+        <MiuixCard class="section-card section-card--pad">
+          <div class="button-row">
+            <MiuixButton class="grow" @click="onCancel">{{ cancelText }}</MiuixButton>
+            <MiuixButton class="grow" type="primary" @click="onSubmit">{{
+              submitText
+            }}</MiuixButton>
+          </div>
+          <div class="button-row">
+            <MiuixButton class="grow" disabled>Disabled</MiuixButton>
+            <MiuixButton class="grow" type="primary" disabled>Disabled</MiuixButton>
+          </div>
+        </MiuixCard>
+
+        <!-- ProgressIndicator -->
+        <MiuixSmallTitle text="ProgressIndicator" />
+        <MiuixCard class="section-card section-card--pad">
+          <div class="progress-stack">
+            <MiuixProgressIndicator type="linear" :progress="animatedProgress" />
+            <MiuixProgressIndicator
+              v-for="(p, i) in progressValues"
+              :key="i"
+              type="linear"
+              :progress="p"
             />
           </div>
-          <span class="echo"
-            >vertical: {{ sliderVertical }} | reverse: {{ sliderVerticalReverse }}</span
+          <div class="progress-circulars">
+            <MiuixProgressIndicator type="circular" :progress="animatedProgress" />
+            <MiuixProgressIndicator
+              v-for="(p, i) in progressValues"
+              :key="i"
+              type="circular"
+              :progress="p"
+            />
+            <MiuixProgressIndicator type="infinite" color="var(--m-color-on-background-variant)" />
+          </div>
+        </MiuixCard>
+
+        <!-- TextField -->
+        <MiuixSmallTitle text="TextField" />
+        <div class="field-stack">
+          <MiuixInput v-model="text1" />
+          <MiuixInput v-model="text2" label="With title" />
+          <MiuixInput v-model="text3" label="State-based" />
+          <MiuixInput
+            v-model="text4"
+            label="Placeholder & SingleLine"
+            use-label-as-placeholder
+            single-line
+          />
+        </div>
+
+        <!-- Slider -->
+        <MiuixSmallTitle text="Slider" />
+        <MiuixCard class="section-card section-card--pad">
+          <div class="slider-stack">
+            <MiuixText type="body2">Normal: {{ Math.round(sliderNormal) }}%</MiuixText>
+            <MiuixSlider v-model="sliderNormal" />
+            <MiuixText type="body2">Steps: {{ Math.round(sliderSteps) }}/200</MiuixText>
+            <MiuixSlider v-model="sliderSteps" :max="200" :step="1" />
+            <MiuixText type="body2"
+              >Steps with Key Points: {{ Math.round(sliderStepPoints) }}/8</MiuixText
+            >
+            <MiuixSlider v-model="sliderStepPoints" :max="8" :step="1" show-key-points />
+            <MiuixText type="body2">Custom Key Points: {{ Math.round(sliderCustom) }}%</MiuixText>
+            <MiuixSlider
+              v-model="sliderCustom"
+              :key-points="[0, 25, 50, 75, 100]"
+              show-key-points
+            />
+            <MiuixText type="body2">Disabled: {{ Math.round(sliderDisabled) }}%</MiuixText>
+            <MiuixSlider v-model="sliderDisabled" disabled />
+          </div>
+        </MiuixCard>
+
+        <!-- RangeSlider -->
+        <MiuixSmallTitle text="RangeSlider" />
+        <MiuixCard class="section-card section-card--pad">
+          <div class="slider-stack">
+            <MiuixText type="body2">Range: {{ rangeNormal[0] }}% - {{ rangeNormal[1] }}%</MiuixText>
+            <MiuixRangeSlider v-model="rangeNormal" />
+            <MiuixText type="body2"
+              >With Key Points: {{ rangeSteps[0] }} - {{ rangeSteps[1] }}</MiuixText
+            >
+            <MiuixRangeSlider v-model="rangeSteps" :max="8" :step="1" show-key-points />
+            <MiuixText type="body2"
+              >Custom Points: {{ rangeCustom[0] }}% - {{ rangeCustom[1] }}%</MiuixText
+            >
+            <MiuixRangeSlider
+              v-model="rangeCustom"
+              :key-points="[0, 20, 40, 60, 80, 100]"
+              show-key-points
+            />
+            <MiuixText type="body2"
+              >Disabled: {{ rangeDisabled[0] }}% - {{ rangeDisabled[1] }}%</MiuixText
+            >
+            <MiuixRangeSlider v-model="rangeDisabled" disabled />
+          </div>
+        </MiuixCard>
+
+        <!-- VerticalSlider -->
+        <MiuixSmallTitle text="VerticalSlider" />
+        <MiuixCard class="section-card section-card--pad">
+          <div class="vslider-row">
+            <div class="vslider">
+              <MiuixSlider v-model="vSlider1" orientation="vertical" /><MiuixText type="footnote2"
+                >Normal {{ Math.round(vSlider1) }}%</MiuixText
+              >
+            </div>
+            <div class="vslider">
+              <MiuixSlider v-model="vSlider2" orientation="vertical" :max="6" :step="1" /><MiuixText
+                type="footnote2"
+                >Steps {{ Math.round(vSlider2) }}/6</MiuixText
+              >
+            </div>
+            <div class="vslider">
+              <MiuixSlider
+                v-model="vSlider3"
+                orientation="vertical"
+                :max="6"
+                :step="1"
+                show-key-points
+              /><MiuixText type="footnote2">Points {{ Math.round(vSlider3) }}/6</MiuixText>
+            </div>
+            <div class="vslider">
+              <MiuixSlider
+                v-model="vSlider4"
+                orientation="vertical"
+                :key-points="[0, 25, 50, 75, 100]"
+                show-key-points
+              /><MiuixText type="footnote2">Custom {{ Math.round(vSlider4) }}%</MiuixText>
+            </div>
+            <div class="vslider">
+              <MiuixSlider v-model="vSliderDisabled" orientation="vertical" disabled /><MiuixText
+                type="footnote2"
+                >Disabled {{ Math.round(vSliderDisabled) }}%</MiuixText
+              >
+            </div>
+          </div>
+        </MiuixCard>
+
+        <!-- TabRow -->
+        <MiuixSmallTitle text="TabRow" />
+        <MiuixTabRow v-model="tab1" :tabs="tabs1" class="section-card" />
+        <MiuixCard class="section-card section-card--pad">
+          <MiuixTabRow v-model="tab2" :tabs="tabs2" contour />
+          <div class="tab-content">
+            <MiuixText>Content of {{ tabs2[tab2] }}</MiuixText>
+          </div>
+        </MiuixCard>
+
+        <!-- Card -->
+        <MiuixSmallTitle text="Card" />
+        <MiuixCard
+          class="section-card section-card--pad"
+          style="background: var(--m-color-primary-variant)"
+        >
+          <MiuixText :size="19" weight="semibold" color="var(--m-color-on-primary-variant)"
+            >Card</MiuixText
+          >
+          <MiuixText :size="17" color="var(--m-color-on-primary-variant)"
+            >ShowIndication: true</MiuixText
+          >
+        </MiuixCard>
+        <div class="card-row">
+          <MiuixCard press-feedback="sink" class="section-card section-card--pad grow">
+            <MiuixText :size="18" weight="medium">Card</MiuixText>
+            <MiuixText type="paragraph" color="var(--m-color-on-surface-variant-summary)"
+              >PressFeedback Type: Sink</MiuixText
+            >
+          </MiuixCard>
+          <MiuixCard press-feedback="tilt" class="section-card section-card--pad grow">
+            <MiuixText :size="18" weight="medium">Card</MiuixText>
+            <MiuixText type="paragraph" color="var(--m-color-on-surface-variant-summary)"
+              >PressFeedback Type: Tilt</MiuixText
+            >
+          </MiuixCard>
+        </div>
+
+        <MiuixDivider />
+        <div class="footer">
+          <MiuixText type="footnote1" color="var(--m-color-on-surface-variant-summary)"
+            >miuix-vue · Vue 3 port of miuix</MiuixText
           >
         </div>
       </div>
-    </section>
+    </main>
 
-    <section class="playground__section">
-      <h2>RangeSlider</h2>
-      <div class="stack">
-        <div class="slider-row">
-          <MiuixRangeSlider v-model="sliderRange" />
-          <span class="echo">range: [{{ sliderRange[0] }}, {{ sliderRange[1] }}]</span>
+    <MiuixDialog v-model="dialogOpen" title="Dialog" summary="This is a dialog summary text.">
+      <template #default="{ close }">
+        <div class="dialog-actions">
+          <MiuixButton class="grow" @click="close">Cancel</MiuixButton>
+          <MiuixButton class="grow" type="primary" @click="close">Confirm</MiuixButton>
         </div>
-        <div class="slider-row">
-          <MiuixRangeSlider v-model="sliderRangeStepped" :step="10" show-key-points />
-          <span class="echo"
-            >stepped: [{{ sliderRangeStepped[0] }}, {{ sliderRangeStepped[1] }}]</span
-          >
+      </template>
+    </MiuixDialog>
+
+    <MiuixDialog v-model="volumeDialogOpen" title="Adjust Volume" summary="Enter 0-100">
+      <template #default="{ close }">
+        <MiuixInput v-model="volumeText" single-line style="margin-bottom: 16px" />
+        <div class="dialog-actions">
+          <MiuixButton class="grow" @click="close">Cancel</MiuixButton>
+          <MiuixButton class="grow" type="primary" @click="confirmVolume">Confirm</MiuixButton>
         </div>
-      </div>
-    </section>
-
-    <section class="playground__section">
-      <h2>Switch</h2>
-      <div class="row row--align">
-        <label class="switch-row">
-          <MiuixSwitch v-model="switchA" />
-          <span>off → on (drag past 50% or click)</span>
-        </label>
-        <label class="switch-row">
-          <MiuixSwitch v-model="switchB" />
-          <span>currently {{ switchB ? 'on' : 'off' }}</span>
-        </label>
-        <label class="switch-row">
-          <MiuixSwitch v-model="switchA" disabled />
-          <span>disabled</span>
-        </label>
-      </div>
-    </section>
-
-    <section class="playground__section">
-      <h2>Input</h2>
-      <div class="row">
-        <MiuixInput v-model="inputValue" placeholder="Type something..." />
-        <MiuixInput v-model="inputValue" placeholder="Read only" readonly />
-        <MiuixInput v-model="inputValue" placeholder="Disabled" disabled />
-      </div>
-      <p class="echo">value: {{ inputValue || '(empty)' }}</p>
-    </section>
-
-    <section class="playground__section">
-      <h2>Dialog</h2>
-      <div class="row">
-        <MiuixButton type="primary" @click="dialogOpen = true">Open dialog</MiuixButton>
-      </div>
-      <MiuixDialog v-model="dialogOpen" title="Demo dialog">
-        <p>
-          spring enter via folmeSpringByResponse(0.9, 0.3) (≈ stiffness 4376), dim with
-          DecelerateEasing(1.5) over 300ms. Click outside or "Cancel" to dismiss.
-        </p>
-        <template #footer="{ close }">
-          <MiuixButton @click="close">Cancel</MiuixButton>
-          <MiuixButton type="primary" @click="close">OK</MiuixButton>
-        </template>
-      </MiuixDialog>
-    </section>
-
-    <section class="playground__section">
-      <h2>Card</h2>
-      <div class="row">
-        <MiuixCard class="demo-card">
-          <p>Static card (no press feedback).</p>
-        </MiuixCard>
-        <MiuixCard press-feedback="sink" class="demo-card">
-          <p>Press me — sinks to 0.94 with folmeSpring(0.8, 600).</p>
-        </MiuixCard>
-        <MiuixCard press-feedback="tilt" class="demo-card">
-          <p>Press a corner — tilts ±8° with folmeSpring(0.6, 400).</p>
-        </MiuixCard>
-      </div>
-    </section>
-  </main>
+      </template>
+    </MiuixDialog>
+  </div>
 </template>
 
 <style lang="scss">
+html,
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: var(--m-color-surface);
-  color: var(--m-color-on-surface);
+  height: 100%;
 }
 
-.playground {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 32px 24px 64px;
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--m-color-background);
+  color: var(--m-color-on-background);
+}
 
-  &__header {
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--m-color-background);
+
+  &__bar {
+    flex: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--m-color-surface);
+  }
+
+  &__bar-inner {
+    max-width: 640px;
+    margin: 0 auto;
+    height: 56px;
+    padding: 0 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 32px;
   }
 
-  &__section {
-    margin-top: 32px;
+  &__theme-glyph {
+    font-size: 20px;
+    line-height: 1;
   }
-}
 
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
+  &__scroll {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--m-color-surface);
+  }
 
-h1 {
-  margin: 0;
-  font-size: var(--m-text-title2-size);
-}
-
-h2 {
-  font-size: var(--m-text-title4-size);
-  margin: 0 0 16px;
-}
-
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.slider-row {
-  display: grid;
-  grid-template-columns: 1fr 220px;
-  align-items: center;
-  gap: 16px;
-
-  &--vertical {
-    align-items: start;
+  &__content {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 8px 0 32px;
   }
 }
 
-.vertical-pair {
-  display: flex;
-  gap: 24px;
-  height: 200px;
-}
+.section-card {
+  margin: 0 12px 12px;
 
-.row--align {
-  align-items: center;
-}
-
-.switch-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  font-size: var(--m-text-body1-size);
-}
-
-.echo {
-  margin: 12px 0 0;
-  font-size: var(--m-text-footnote1-size);
-  color: var(--m-color-on-surface-variant-summary);
-}
-
-.demo-card {
-  width: 220px;
-
-  .m-card {
+  &--pad {
     padding: 16px;
   }
+}
 
-  p {
-    margin: 0;
-    font-size: var(--m-text-body1-size);
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  justify-content: space-between;
+
+  &--start {
+    justify-content: flex-start;
+    gap: 6px;
   }
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+
+  & + & {
+    margin-top: 12px;
+  }
+}
+
+.grow {
+  flex: 1;
+}
+
+.progress-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 3px;
+}
+
+.progress-circulars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-evenly;
+  margin-top: 16px;
+}
+
+.field-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 12px 12px;
+}
+
+.slider-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vslider-row {
+  display: flex;
+  justify-content: space-evenly;
+  gap: 8px;
+}
+
+.vslider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 160px;
+
+  .m-slider--vertical {
+    width: 25px;
+    flex: 1;
+  }
+}
+
+.tab-content {
+  margin-top: 12px;
+}
+
+.card-row {
+  display: flex;
+  gap: 12px;
+  margin: 0 12px 12px;
+
+  .section-card {
+    margin: 0;
+  }
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 12px;
 }
 </style>
