@@ -8,15 +8,24 @@
 // 2 (focused, BorderWidth), label font 17 (normal) → 10 (floating), label weight
 // Medium, bg secondaryContainer, label onSecondaryContainer, border + caret primary.
 //
+// TextFieldChrome animates border width/color, label offset and label font size
+// via animateDpAsState / animateColorAsState, i.e. the Compose default spring
+// spring(dampingRatio=1, stiffness=StiffnessMedium=1500) = folmeSpring(1, 1500).
+// We drive `focusProgress` (border) and `floatProgress` (label/field shift) as
+// motion values with that spring.
+//
 // Label states (LabelAnimState):
 //   Hidden      — no label prop
 //   Placeholder — useLabelAsPlaceholder && text present → label hidden
 //   Normal      — text empty → label shown at 17px over the input (placeholder)
 //   Floating    — text present (!useLabelAsPlaceholder) → label floats up
 //                 (-insideMargin/2 = -8) and shrinks to 10px; text shifts down 8.
-// Border/label transitions use Compose default springs ≈ a short ease here.
+// When an icon is present its side inside-margin is dropped to 0 (gap = 0dp);
+// the icon supplies its own spacing — there is no 12dp gap in the source.
 
-import { computed, ref, useSlots } from 'vue'
+import { animate, motionValue } from 'motion-v'
+import { computed, onUnmounted, ref, useSlots, watch } from 'vue'
+import { folmeSpring } from '../../anim'
 
 defineOptions({ name: 'MiuixInput' })
 
@@ -58,8 +67,47 @@ const labelVisible = computed(
   () => !!props.label && !(props.useLabelAsPlaceholder && hasText.value),
 )
 const floating = computed(() => !!props.label && !props.useLabelAsPlaceholder && hasText.value)
-// Native placeholder only when there is no managed label.
 const nativePlaceholder = computed(() => (props.label ? undefined : props.placeholder))
+
+// Compose default spring for animateDpAsState / animateColorAsState.
+const SPRING = folmeSpring(1, 1500)
+
+const focusMv = motionValue(0)
+const floatMv = motionValue(floating.value ? 1 : 0)
+const focusProgress = ref(0)
+const floatProgress = ref(floating.value ? 1 : 0)
+focusMv.on('change', (v: number) => (focusProgress.value = v))
+floatMv.on('change', (v: number) => (floatProgress.value = v))
+let focusAnim: { stop: () => void } | null = null
+let floatAnim: { stop: () => void } | null = null
+
+watch(focused, (v) => {
+  focusAnim?.stop()
+  focusAnim = animate(focusMv, v ? 1 : 0, SPRING)
+})
+watch(floating, (v) => {
+  floatAnim?.stop()
+  floatAnim = animate(floatMv, v ? 1 : 0, SPRING)
+})
+onUnmounted(() => {
+  focusAnim?.stop()
+  floatAnim?.stop()
+})
+
+// Border: 0 → 2px (inset box-shadow), primary (invisible at width 0 anyway).
+const rootStyle = computed(() => ({
+  boxShadow: `inset 0 0 0 ${(2 * focusProgress.value).toFixed(3)}px var(--m-color-primary)`,
+}))
+// Label floats up by insideMargin/2 (8) and shrinks 17 → 10.
+const labelStyle = computed(() => ({
+  transform: `translateY(${(-8 * floatProgress.value).toFixed(3)}px)`,
+  fontSize: `${(17 - 7 * floatProgress.value).toFixed(3)}px`,
+}))
+// Field text shifts down by 8 when the label floats (vertical inside-margin 16).
+const fieldStyle = computed(() => ({
+  paddingTop: `${(16 + 8 * floatProgress.value).toFixed(3)}px`,
+  paddingBottom: `${(16 - 8 * floatProgress.value).toFixed(3)}px`,
+}))
 
 function onInput(event: Event): void {
   emit('update:modelValue', (event.target as HTMLInputElement | HTMLTextAreaElement).value)
@@ -78,11 +126,11 @@ function onBlur(event: FocusEvent): void {
   <label
     class="m-input"
     :class="{
-      'm-input--focused': focused,
       'm-input--disabled': props.disabled,
       'm-input--with-leading': !!slots.leading,
       'm-input--with-trailing': !!slots.trailing,
     }"
+    :style="rootStyle"
   >
     <span v-if="slots.leading" class="m-input__icon m-input__icon--leading">
       <slot name="leading" />
@@ -92,13 +140,14 @@ function onBlur(event: FocusEvent): void {
         v-if="labelVisible"
         class="m-input__label"
         :class="{ 'm-input__label--floating': floating }"
+        :style="labelStyle"
       >
         {{ props.label }}
       </span>
       <textarea
         v-if="!props.singleLine"
         class="m-input__field"
-        :class="{ 'm-input__field--floating': floating }"
+        :style="fieldStyle"
         :value="props.modelValue"
         :placeholder="nativePlaceholder"
         :disabled="props.disabled"
@@ -111,7 +160,7 @@ function onBlur(event: FocusEvent): void {
       <input
         v-else
         class="m-input__field"
-        :class="{ 'm-input__field--floating': floating }"
+        :style="fieldStyle"
         type="text"
         :value="props.modelValue"
         :placeholder="nativePlaceholder"
@@ -136,18 +185,11 @@ function onBlur(event: FocusEvent): void {
   width: 100%;
   border-radius: var(--m-radius-md);
   background: var(--m-color-secondary-container);
-  // Border drawn as inset box-shadow: 0 → 2px, color bg → primary, animated.
-  box-shadow: inset 0 0 0 0 var(--m-color-primary);
-  transition: box-shadow 200ms ease-out;
+  // Border (inset box-shadow) width is spring-driven inline (rootStyle).
   cursor: text;
-
-  &--focused {
-    box-shadow: inset 0 0 0 2px var(--m-color-primary);
-  }
 
   &--disabled {
     cursor: not-allowed;
-    opacity: 0.5;
   }
 
   &__icon {
@@ -181,43 +223,27 @@ function onBlur(event: FocusEvent): void {
     line-height: 1.2;
     pointer-events: none;
     transform-origin: top left;
-    transition:
-      transform 200ms ease-out,
-      font-size 200ms ease-out;
-
-    &--floating {
-      font-size: 10px;
-      transform: translateY(-8px);
-    }
   }
 
+  // Icon present → drop that side's inside-margin to 0 (gap = 0; icon supplies it).
   &--with-leading &__label {
-    left: 12px;
+    left: 0;
   }
 
   &__field {
     width: 100%;
     box-sizing: border-box;
     margin: 0;
-    padding: 16px;
+    padding: 0 16px;
     border: 0;
     outline: 0;
     background: transparent;
-    color: var(--m-color-on-surface-container);
+    color: var(--m-color-on-background);
     font-family: inherit;
     font-size: var(--m-text-main-size);
     line-height: 1.2;
     caret-color: var(--m-color-primary);
     resize: none;
-    transition:
-      padding-top 200ms ease-out,
-      padding-bottom 200ms ease-out;
-
-    // Floating label: shift text down by insideMargin/2 (8) to clear the label.
-    &--floating {
-      padding-top: 24px;
-      padding-bottom: 8px;
-    }
 
     &::placeholder {
       color: var(--m-color-on-secondary-container);
@@ -226,16 +252,14 @@ function onBlur(event: FocusEvent): void {
 
     &:disabled {
       cursor: not-allowed;
-      -webkit-text-fill-color: var(--m-color-disabled-on-surface);
-      color: var(--m-color-disabled-on-surface);
     }
   }
 
   &--with-leading &__field {
-    padding-left: 12px;
+    padding-left: 0;
   }
   &--with-trailing &__field {
-    padding-right: 12px;
+    padding-right: 0;
   }
 }
 </style>
