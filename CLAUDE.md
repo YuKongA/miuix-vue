@@ -26,7 +26,7 @@
 
 ## 动画参数表（权威，逐字照抄 miuix）
 
-所有 spring 走 `src/anim/folmeSpring.ts` 的 `folmeSpring(dampingRatio, stiffness)`。下表数值**不允许四舍五入、不允许微调**：
+所有 spring 走 `src/anim/folmeSpring.ts`：`folmeSpring(dampingRatio, stiffness)`，response 制的走 `folmeSpringByResponse(damping, response)`（stiffness = (2π/response)²）。下表数值**不允许四舍五入、不允许微调**：
 
 | 位置                              | 规格                                              |
 | :-------------------------------- | :------------------------------------------------ |
@@ -39,7 +39,7 @@
 | Slider track alpha                | `tween 150ms`，默认 ease                          |
 | Card sink                         | `folmeSpring(0.8, 600)`，scale `1.0 → 0.94`       |
 | Card tilt                         | `folmeSpring(0.6, 400)`，rotation ±8°             |
-| Dialog enter（大屏）              | `folmeSpringByResponse(0.9, 0.3)` → stiffness≈4376 |
+| Dialog enter（大屏）              | `folmeSpringByResponse(0.9, 0.3)` → stiffness≈438.65 |
 | Dialog enter（小屏）              | `folmeSpring(0.88, 450)`                          |
 | Dialog dim enter                  | `tween 300ms`, `DecelerateEasing(1.5)`            |
 | Dialog dim exit                   | `tween 250ms`, `DecelerateEasing(1.5)`            |
@@ -50,6 +50,8 @@ hover/press 缩放上限统一为 **1.127**（Switch thumb、Slider thumb）。
 Card sink 缩放下限 **0.94**。
 Switch 拖拽 coerce 范围 **±21dp**，磁吸阈值 50%（拖拽偏移 > 半程即翻面）。
 Slider 磁吸阈值默认 **0.02**（值域的 2%）。
+
+> 上表是核心代表参数。其余组件（BottomSheet / Snackbar / SearchBar / Dropdown popup / NavigationBar / ProgressIndicator 等）的 spring / tween 同样 1:1 复刻，具体值见各组件 `.vue` 文件头注释。例：BottomSheet 进出场 `folmeSpringByResponse(0.9, 0.38)`、回弹/消散 `folmeSpringByResponse(0.85, 0.4)`；Dropdown popup fraction `spring(dampingRatio 0.82, stiffness 362.5)`、alpha tween 200/150ms、dim SinOut 300/150ms。
 
 ## 触觉反馈
 
@@ -66,6 +68,9 @@ Slider 磁吸阈值默认 **0.02**（值域的 2%）。
 | Card      | 圆角 16，sink 0.94，tilt ±8°，cameraDistance = 12 × density                   |
 | Dialog    | 大屏 maxH = windowH × 2/3，小屏 back 手势 scale = 1 - back × 0.2              |
 
+> **Card tilt 的 cameraDistance**：`12 × density` 是 Compose 的相机矩阵参数，与 CSS `perspective`（视点距离）不是同一套单位、无法 1:1 复刻（12px 视点会让卡片穿过相机而塌陷）。web 改用与卡片宽度成比例的 perspective（`rect.width × TILT_PERSPECTIVE_FACTOR`，默认 1.6，相机点取按下的支点角，见 `Card.vue`），倾斜角仍固定 ±8°。这是铁律 #1 下唯一因单位不可映射而做的近似。
+> **弹窗形态**：web 只实现「居中（大屏）」一种弹窗（Dialog / BottomSheet），不复刻 super / window / 小屏 back 手势变体（POC 目标：一种弹窗样式）。
+
 ## 4 个自定义缓动曲线
 
 | 名称             | 公式                                  | 说明                             |
@@ -80,9 +85,17 @@ Slider 磁吸阈值默认 **0.02**（值域的 2%）。
 ## 主题
 
 - 仅 Light / Dark 两套（动态色 / Monet / MaterialKolor 不在范围）
-- 48 个颜色 token、14 个文字样式 token，全部以 CSS 变量呈现
+- **53 个颜色 token**、14 个文字样式 token（共 16 条 `--m-text-*`：14 个 `-size` + `subtitle-weight` + `paragraph-line-height`），全部以 CSS 变量呈现
 - Light primary `#3482FF`，Dark primary `#277AF7`
-- **其他 token 值**：从 `miuix-ui/src/commonMain/kotlin/top/yukonga/miuix/kmp/theme/Colors.kt` 的 `lightColorScheme()` / `darkColorScheme()` 函数体逐字面量抄过来，禁止"取个相近的"
+- **其他 token 值**：从 `miuix-ui/src/commonMain/kotlin/top/yukonga/miuix/kmp/theme/Colors.kt` 的 `lightColorScheme()` / `darkColorScheme()` 函数体逐字面量抄过来，禁止"取个相近的"。`0xAARRGGBB` → CSS `#RRGGBBAA`（alpha 字节从头移到尾，别丢）
+- **只复刻颜色「值 + 语义角色名」，不照搬 Compose 颜色机制**：Compose 的 `Colors` 数据类 / `LocalColors` / 每 token `mutableStateOf` / `Color.copy(alpha=)` / `animateColorAsState` 在 web 都由原生 CSS 更好地实现 —— 具名色板 = CSS 变量、明暗切换 = 级联 + `.m-theme-dark` 类、派生半透明 = `::after` opacity 叠层或 `color-mix()` / 烤进 8 位 hex、色值动画 = CSS `transition`（仅铁律钉死弹簧的色值如 Switch 轨道走 motion-v）。绝不在 JS 里造 `colors` 对象（违反铁律 #2）
+
+## 图标
+
+- **基础图标**（ArrowRight / ArrowUpDown / Check / Search）逐字抄自 `icon/basic/*.kt`，作为函数式组件放 `src/icons/index.ts`，供组件内部用。
+- **扩展图标包** = miuix `miuix-icons` 全集（155 icon × 5 weight = 775）。由 `scripts/generate-extended-icons.mjs` 从兄弟仓库 SVG（`D:\GitHub\miuix\docs\public\icons\extended`）生成到 `src/icons/extended/icons.ts`（每个 weight 只存 `{vw,vh,d}`；该包统一为单 path、`fill-rule:nonzero`、竖直翻转 `matrix(1 0 0 -1 0 vh)`，由渲染器套用）。改包后跑 `bun scripts/generate-extended-icons.mjs` 重新生成（生成文件已在 prettier / oxlint / eslint 忽略）。
+- 用 `<MiuixIcon :icon weight>` 渲染（`icon` 传整支 `ExtendedIcon` 按 `weight` 取，默认 `regular`；或已解析的 weight 数据），**不为每个图标建组件**。
+- 扩展包作为**独立构建入口** `miuix-vue/icons`（按需 ~1.3MB）；核心包不含图标数据（`MiuixIcon` 只 `import type`，故 `miuix-vue.js` 仍 ~82KB）。
 
 ## 技术栈
 
@@ -99,7 +112,7 @@ Slider 磁吸阈值默认 **0.02**（值域的 2%）。
 2. 把每一个尺寸、颜色引用、spring 参数都抠出来
 3. 设计 Vue 风格的 API（props/slots/emits），遵守铁律 #2
 4. 用 `folmeSpring()` + CSS 变量实现
-5. 在 `playground/sections/` 加一段可对照的 demo
+5. 在 `playground/pages/`（如 `MainPage.vue` 对应小节）加一段可对照的 demo
 6. 跑 miuix `example/`（Android / Desktop），人眼对照观感
 
 ## 提交信息（Conventional Commits）
@@ -151,7 +164,3 @@ bun run format && bun run lint
 ```
 
 格式错误 / lint 错误的 commit 拒绝合入。
-
-## 包管理器
-
-只允许 Bun。**禁止**在脚本、文档、CI workflow 里出现 `npm install` / `pnpm install` / `yarn`。Lockfile 是 `bun.lock`。
