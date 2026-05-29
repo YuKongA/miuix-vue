@@ -112,9 +112,14 @@ function onPointerDown(event: PointerEvent): void {
   pressed.value = true
   longPressed = false
 
+  // Capture the pointer so the press holds: the 3D tilt changes the element's
+  // hit geometry, which would otherwise fire pointerleave under the cursor and
+  // reset immediately. Capture suppresses boundary events until release.
+  const el = event.currentTarget as HTMLElement
+  el.setPointerCapture?.(event.pointerId)
+
   if (props.pressFeedback === 'tilt') {
-    const target = event.currentTarget as HTMLElement
-    const rect = target.getBoundingClientRect()
+    const rect = el.getBoundingClientRect()
     const offsetX = event.clientX - rect.left
     const offsetY = event.clientY - rect.top
     const halfW = rect.width / 2
