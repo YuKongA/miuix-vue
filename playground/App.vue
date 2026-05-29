@@ -14,7 +14,7 @@ import {
   useTheme,
   type MiuixNavigationItem,
 } from '@/index'
-import { Edit, GridView, Image, Settings, Theme, Tune } from '@/icons/extended'
+import { Create, Edit, HorizontalSplit, Image, Settings, Theme } from '@/icons/extended'
 import MainPage from './pages/MainPage.vue'
 import IconPage from './pages/IconPage.vue'
 import ColorPage from './pages/ColorPage.vue'
@@ -29,8 +29,8 @@ function toggleTheme(): void {
 const pages = [MainPage, IconPage, ColorPage, TextStylePage, SettingsPage]
 const titles = ['Home', 'Icon', 'Color', 'TextStyle', 'Settings']
 const navItems: MiuixNavigationItem[] = titles.map((label) => ({ label }))
-// Per-tab glyphs from the extended pack.
-const navIcons = [Tune, GridView, Image, Edit, Settings]
+// Per-tab glyphs — same as the miuix example (AppContent.kt navigationItems).
+const navIcons = [HorizontalSplit, Create, Image, Edit, Settings]
 
 const navIndex = ref(0)
 const activePage = computed(() => pages[navIndex.value])

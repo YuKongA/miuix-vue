@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // MainPage — 1:1 with miuix example MainPage section list + per-section padding.
 import { onMounted, onUnmounted, ref } from 'vue'
+import { AnimatePresence, Motion } from 'motion-v'
 import {
   MiuixArrowPreference,
   MiuixBasicComponent,
@@ -56,6 +57,8 @@ const swA = ref(false)
 const swB = ref(true)
 const swPrefExpand = ref(false)
 const swPref = ref(false)
+// AnimatedVisibility default size spring: spring(StiffnessMediumLow=400, ratio 1).
+const expandSpring = { type: 'spring' as const, stiffness: 400, damping: 40 }
 
 // Arrow
 const volume = ref(50)
@@ -282,13 +285,24 @@ const pickedColor = ref('rgb(52, 130, 255)')
         title="Switch"
         summary="Click to expand a Switch"
       />
-      <MiuixSwitchPreference v-if="swPrefExpand" v-model="swPref" title="Switch">
-        <template #end>
-          <MiuixText type="body2" color="var(--m-color-on-surface-variant-actions)">{{
-            swPref
-          }}</MiuixText>
-        </template>
-      </MiuixSwitchPreference>
+      <AnimatePresence :initial="false">
+        <Motion
+          v-if="swPrefExpand"
+          class="ex-expand"
+          :initial="{ height: 0, opacity: 0 }"
+          :animate="{ height: 'auto', opacity: 1 }"
+          :exit="{ height: 0, opacity: 0 }"
+          :transition="expandSpring"
+        >
+          <MiuixSwitchPreference v-model="swPref" title="Switch">
+            <template #end>
+              <MiuixText type="body2" color="var(--m-color-on-surface-variant-actions)">{{
+                swPref
+              }}</MiuixText>
+            </template>
+          </MiuixSwitchPreference>
+        </Motion>
+      </AnimatePresence>
       <MiuixSwitchPreference :model-value="true" disabled title="Disabled Switch" />
     </MiuixCard>
 
@@ -762,6 +776,11 @@ const pickedColor = ref('rgb(52, 130, 255)')
 }
 .ex-grow {
   flex: 1;
+}
+
+// Clip while the height spring runs (expand/collapse).
+.ex-expand {
+  overflow: hidden;
 }
 
 .ex-control-row {

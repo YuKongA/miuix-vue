@@ -4,10 +4,14 @@
 // Regular glyph and expands to compare Light / Normal / Regular / Medium /
 // Demibold side by side. One row open at a time.
 import { computed, ref } from 'vue'
+import { AnimatePresence, Motion } from 'motion-v'
 import { MiuixIcon, MiuixSearchBar, MiuixSmallTitle } from '@/index'
 import { allExtendedIcons, ExpandLess, ExpandMore, type MiuixIconWeight } from '@/icons/extended'
 
 const WEIGHTS: MiuixIconWeight[] = ['light', 'normal', 'regular', 'medium', 'demibold']
+
+// AnimatedVisibility default size spring: spring(StiffnessMediumLow=400, ratio 1).
+const expandSpring = { type: 'spring' as const, stiffness: 400, damping: 40 }
 
 const query = ref('')
 const expandedName = ref<string | null>(null)
@@ -53,12 +57,23 @@ function toggle(name: string): void {
             color="var(--m-color-on-surface-variant-actions)"
           />
         </span>
-        <span v-if="expandedName === ic.name" class="icon-row__weights">
-          <span v-for="w in WEIGHTS" :key="w" class="icon-weight">
-            <MiuixIcon :icon="ic" :weight="w" :size="28" />
-            <span class="icon-weight__label">{{ w }}</span>
-          </span>
-        </span>
+        <AnimatePresence :initial="false">
+          <Motion
+            v-if="expandedName === ic.name"
+            class="icon-row__expand"
+            :initial="{ height: 0, opacity: 0 }"
+            :animate="{ height: 'auto', opacity: 1 }"
+            :exit="{ height: 0, opacity: 0 }"
+            :transition="expandSpring"
+          >
+            <span class="icon-row__weights">
+              <span v-for="w in WEIGHTS" :key="w" class="icon-weight">
+                <MiuixIcon :icon="ic" :weight="w" :size="28" />
+                <span class="icon-weight__label">{{ w }}</span>
+              </span>
+            </span>
+          </Motion>
+        </AnimatePresence>
       </button>
     </div>
     <div v-else class="icon-empty">No icons match “{{ query }}”.</div>
@@ -93,6 +108,7 @@ function toggle(name: string): void {
 }
 
 .icon-row {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -106,14 +122,32 @@ function toggle(name: string): void {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 
-  &:active {
+  // MiuixIndication overlay (onBackground, additive, 120ms linear) — a subtle
+  // tint on hover/press, not a solid fill.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
     background: var(--m-color-on-background);
+    opacity: 0;
+    transition: opacity 120ms linear;
+    pointer-events: none;
+  }
+  &:hover::after {
+    opacity: 0.06;
+  }
+  &:active::after {
+    opacity: 0.1;
   }
 
   &__main {
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+
+  &__expand {
+    overflow: hidden;
   }
 
   &__name {
