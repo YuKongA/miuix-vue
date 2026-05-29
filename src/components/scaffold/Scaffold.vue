@@ -17,7 +17,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  color: 'var(--m-color-background)',
+  // Scaffold.kt: containerColor defaults to colorScheme.surface.
+  color: 'var(--m-color-surface)',
 })
 
 const slots = useSlots()
@@ -61,8 +62,9 @@ const slots = useSlots()
 
   &__fab {
     position: absolute;
-    right: 24px;
-    bottom: 24px;
+    // Scaffold.kt FabSpacing = 12.dp.
+    right: 12px;
+    bottom: 12px;
     z-index: 5;
   }
 

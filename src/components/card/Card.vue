@@ -10,7 +10,7 @@
 //             pivot follows touch quadrant, cameraDistance 12 * density
 
 import { Motion } from 'motion-v'
-import { computed, ref } from 'vue'
+import { computed, getCurrentInstance, ref } from 'vue'
 import { folmeSpring } from '../../anim'
 
 defineOptions({ name: 'MiuixCard' })
@@ -20,20 +20,21 @@ export type MiuixCardPressFeedback = 'none' | 'sink' | 'tilt'
 interface Props {
   /** Visual press feedback. miuix PressFeedbackType. */
   pressFeedback?: MiuixCardPressFeedback
-  /** Background color; defaults to surfaceContainer. */
-  color?: string
-  /** Content color; defaults to onSurfaceContainer. */
-  contentColor?: string
-  /** Draw the MiuixIndication alpha overlay on press (interactive cards). */
+  // Background / content color are CSS-variable customization points
+  // (--m-card-color / --m-card-content-color), not props, per CLAUDE.md rule #2.
+  /** Draw the MiuixIndication alpha overlay on press (only when clickable). */
   showIndication?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   pressFeedback: 'none',
-  color: 'var(--m-color-surface-container)',
-  contentColor: 'var(--m-color-on-surface-container)',
   showIndication: false,
 })
+
+// miuix attaches the indication only via combinedClickable, i.e. only when an
+// onClick/onLongPress is present — a non-clickable card never shows it.
+const instance = getCurrentInstance()
+const showOverlay = computed(() => props.showIndication && !!instance?.vnode.props?.onClick)
 
 const emit = defineEmits<{
   click: [event: MouseEvent]
@@ -72,8 +73,6 @@ const motionTransition = computed(() => {
 const cardStyle = computed(() => ({
   transformOrigin: `${tiltOriginX.value} ${tiltOriginY.value}`,
   cursor: isInteractive.value ? 'pointer' : undefined,
-  background: props.color,
-  color: props.contentColor,
 }))
 
 function onPointerDown(event: PointerEvent): void {
@@ -109,10 +108,7 @@ function onClick(event: MouseEvent): void {
   <div class="m-card-wrapper" :class="{ 'm-card-wrapper--3d': props.pressFeedback === 'tilt' }">
     <Motion
       class="m-card"
-      :class="[
-        `m-card--feedback-${props.pressFeedback}`,
-        { 'm-card--indication': props.showIndication },
-      ]"
+      :class="[`m-card--feedback-${props.pressFeedback}`, { 'm-card--indication': showOverlay }]"
       :style="cardStyle"
       :animate="animateTarget"
       :transition="motionTransition"
@@ -145,7 +141,9 @@ function onClick(event: MouseEvent): void {
   display: block;
   overflow: hidden;
   border-radius: var(--m-radius-md);
-  // background / color come from inline style (color / contentColor props).
+  // Theme via CSS variables (rule #2); defaults are the surfaceContainer tokens.
+  background: var(--m-card-color, var(--m-color-surface-container));
+  color: var(--m-card-content-color, var(--m-color-on-surface-container));
 
   &--feedback-tilt {
     // backface visibility prevents flicker during the 3D rotation
@@ -167,11 +165,23 @@ function onClick(event: MouseEvent): void {
   &--indication:hover::after {
     opacity: 0.06;
   }
+  &--indication:focus-visible::after {
+    opacity: 0.08;
+  }
+  &--indication:hover:focus-visible::after {
+    opacity: 0.14;
+  }
   &--indication:active::after {
     opacity: 0.1;
   }
   &--indication:hover:active::after {
     opacity: 0.16;
+  }
+  &--indication:focus-visible:active::after {
+    opacity: 0.18;
+  }
+  &--indication:hover:focus-visible:active::after {
+    opacity: 0.24;
   }
 }
 </style>

@@ -5,45 +5,28 @@
 // Ported from miuix-ui/.../basic/IconButton.kt.
 //
 // IconButtonDefaults: minWidth 40, minHeight 40, cornerRadius 40 (→ circle),
-// backgroundColor Unspecified (transparent). Clickable uses LocalIndication →
-// the MiuixIndication alpha overlay (onBackground, additive, 120ms linear),
-// clipped to the rounded shape.
-
-import { computed } from 'vue'
+// backgroundColor Unspecified (transparent). Per CLAUDE.md rule #2 these are
+// fixed CSS / CSS-variable customization points, not per-instance props.
+// Clickable uses LocalIndication → the MiuixIndication alpha overlay
+// (onBackground; additive hover .06 / focus .08 / press .10 / hold-down .10;
+// press is ignored while held down — Switch.kt's `isPressed && !isHoldDown`).
 
 defineOptions({ name: 'MiuixIconButton' })
 
 interface Props {
   disabled?: boolean
-  /** Background color; defaults to transparent (Color.Unspecified). */
-  backgroundColor?: string
-  /** Corner radius in px; defaults to 40 (fully round at default size). */
-  cornerRadius?: number
-  minWidth?: number
-  minHeight?: number
   /** Held-down visual state (e.g. while an attached popup is open). */
   holdDown?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
-  backgroundColor: 'transparent',
-  cornerRadius: 40,
-  minWidth: 40,
-  minHeight: 40,
   holdDown: false,
 })
 
 const emit = defineEmits<{
   click: [event: MouseEvent]
 }>()
-
-const style = computed(() => ({
-  minWidth: `${props.minWidth}px`,
-  minHeight: `${props.minHeight}px`,
-  borderRadius: `${props.cornerRadius}px`,
-  background: props.backgroundColor,
-}))
 
 function onClick(event: MouseEvent): void {
   if (props.disabled) return
@@ -59,7 +42,6 @@ function onClick(event: MouseEvent): void {
       'm-icon-button--disabled': props.disabled,
       'm-icon-button--hold-down': props.holdDown,
     }"
-    :style="style"
     :disabled="props.disabled"
     @click="onClick"
   >
@@ -73,8 +55,13 @@ function onClick(event: MouseEvent): void {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  // IconButtonDefaults: minWidth/minHeight 40, cornerRadius 40, bg transparent.
+  min-width: var(--m-icon-button-min-width, 40px);
+  min-height: var(--m-icon-button-min-height, 40px);
   padding: 0;
   border: 0;
+  border-radius: var(--m-icon-button-radius, 40px);
+  background: var(--m-icon-button-bg, transparent);
   color: var(--m-color-on-background);
   appearance: none;
   cursor: pointer;
@@ -92,6 +79,8 @@ function onClick(event: MouseEvent): void {
     transition: opacity 120ms linear;
     pointer-events: none;
   }
+
+  // Additive MiuixIndication table (no hold-down): press path stacks.
   &:hover::after {
     opacity: 0.06;
   }
@@ -101,12 +90,31 @@ function onClick(event: MouseEvent): void {
   &:hover:focus-visible::after {
     opacity: 0.14;
   }
-  &:active::after,
-  &--hold-down::after {
+  &:active::after {
     opacity: 0.1;
   }
   &:hover:active::after {
     opacity: 0.16;
+  }
+  &:focus-visible:active::after {
+    opacity: 0.18;
+  }
+  &:hover:focus-visible:active::after {
+    opacity: 0.24;
+  }
+
+  // Hold-down: press is ignored; hold-down 0.10 stacks with hover/focus.
+  &--hold-down::after {
+    opacity: 0.1;
+  }
+  &--hold-down:hover::after {
+    opacity: 0.16;
+  }
+  &--hold-down:focus-visible::after {
+    opacity: 0.18;
+  }
+  &--hold-down:hover:focus-visible::after {
+    opacity: 0.24;
   }
 
   &--disabled {

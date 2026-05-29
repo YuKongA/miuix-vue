@@ -185,16 +185,28 @@ function onClick(event: MouseEvent): void {
     &:hover:active::after {
       opacity: 0.16;
     }
-  }
+    &:focus-visible:active::after {
+      opacity: 0.18;
+    }
+    &:hover:focus-visible:active::after {
+      opacity: 0.24;
+    }
 
-  // Sustained hold-down (HoldDownInteraction) → press alpha (0.10).
-  &--hold-down::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--m-color-on-background);
-    opacity: 0.1;
-    pointer-events: none;
+    // Sustained hold-down (HoldDownInteraction): adds 0.10 and stacks additively
+    // with hover/focus (press is ignored while held — Switch.kt isPressed &&
+    // !isHoldDown). Shares the 120ms-linear ::after, only when clickable+enabled.
+    &.m-basic-component--hold-down::after {
+      opacity: 0.1;
+    }
+    &.m-basic-component--hold-down:hover::after {
+      opacity: 0.16;
+    }
+    &.m-basic-component--hold-down:focus-visible::after {
+      opacity: 0.18;
+    }
+    &.m-basic-component--hold-down:hover:focus-visible::after {
+      opacity: 0.24;
+    }
   }
 
   &--disabled {

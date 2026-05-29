@@ -95,6 +95,12 @@ function onClick(event: MouseEvent): void {
     &:hover:active::after {
       opacity: 0.16;
     }
+    &:focus-visible:active::after {
+      opacity: 0.18;
+    }
+    &:hover:focus-visible:active::after {
+      opacity: 0.24;
+    }
   }
 }
 </style>

@@ -607,7 +607,7 @@ const pickedColor = ref('rgb(52, 130, 255)')
 
     <!-- Card -->
     <MiuixSmallTitle text="Card" />
-    <MiuixCard class="ex-card ex-card--pad" color="var(--m-color-primary-variant)" show-indication>
+    <MiuixCard class="ex-card ex-card--pad" style="--m-card-color: var(--m-color-primary-variant)">
       <MiuixText :size="19" weight="semibold" color="var(--m-color-on-primary-variant)"
         >Card</MiuixText
       >
@@ -664,7 +664,7 @@ const pickedColor = ref('rgb(52, 130, 255)')
         <MiuixButton type="primary" @click="bottomSheetOpen = false">OK</MiuixButton>
       </template>
       <MiuixSmallTitle text="Behavior Settings" />
-      <MiuixCard color="var(--m-color-secondary-container)" class="ex-mb12">
+      <MiuixCard style="--m-card-color: var(--m-color-secondary-container)" class="ex-mb12">
         <MiuixSwitchPreference
           v-model="bottomSheetSwitch"
           title="A Switch"

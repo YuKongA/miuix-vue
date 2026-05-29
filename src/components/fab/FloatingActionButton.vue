@@ -4,26 +4,19 @@
 //
 // Ported from miuix-ui/.../basic/FloatingActionButton.kt.
 //
-// 60×60 circle, containerColor primary, shadow elevation 4, centered content.
-// Uses the Surface clickable indication overlay (onBackground alpha).
+// 60×60 circle, containerColor = primary, shadow elevation 4, centered content.
+// Wraps the clickable Surface, so it carries the MiuixIndication overlay
+// (onBackground; additive hover .06 / focus .08 / press .10). Per CLAUDE.md
+// rule #2, size/shape/color are fixed CSS / CSS-variable customization points,
+// not per-instance props.
 
 defineOptions({ name: 'MiuixFloatingActionButton' })
 
 interface Props {
-  /** Background color; defaults to primary. */
-  color?: string
-  /** Border radius in px; defaults to fully round. */
-  cornerRadius?: number
-  minWidth?: number
-  minHeight?: number
   disabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  color: 'var(--m-color-primary)',
-  cornerRadius: 9999,
-  minWidth: 60,
-  minHeight: 60,
   disabled: false,
 })
 
@@ -40,12 +33,6 @@ function onClick(event: MouseEvent): void {
     type="button"
     class="m-fab"
     :class="{ 'm-fab--disabled': props.disabled }"
-    :style="{
-      minWidth: `${props.minWidth}px`,
-      minHeight: `${props.minHeight}px`,
-      borderRadius: `${props.cornerRadius}px`,
-      background: props.color,
-    }"
     :disabled="props.disabled"
     @click="onClick"
   >
@@ -59,10 +46,15 @@ function onClick(event: MouseEvent): void {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  // FloatingActionButtonDefaults: MinWidth/MinHeight 60, CircleShape, primary.
+  min-width: var(--m-fab-min-width, 60px);
+  min-height: var(--m-fab-min-height, 60px);
   padding: 0;
   border: 0;
+  border-radius: var(--m-fab-radius, 9999px);
+  background: var(--m-fab-color, var(--m-color-primary));
   color: var(--m-color-on-primary);
-  // shadowElevation 4
+  // shadowElevation 4.
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   appearance: none;
   cursor: pointer;
@@ -83,11 +75,23 @@ function onClick(event: MouseEvent): void {
   &:hover::after {
     opacity: 0.06;
   }
+  &:focus-visible::after {
+    opacity: 0.08;
+  }
+  &:hover:focus-visible::after {
+    opacity: 0.14;
+  }
   &:active::after {
     opacity: 0.1;
   }
   &:hover:active::after {
     opacity: 0.16;
+  }
+  &:focus-visible:active::after {
+    opacity: 0.18;
+  }
+  &:hover:focus-visible:active::after {
+    opacity: 0.24;
   }
 
   &--disabled {
