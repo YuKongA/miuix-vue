@@ -129,7 +129,6 @@ onUnmounted(() => cancelAnimationFrame(rafId))
 // TextField
 const text1 = ref('')
 const text2 = ref('')
-const text3 = ref('')
 const text4 = ref('')
 
 // Slider
@@ -472,7 +471,6 @@ const pickedColor = ref('rgb(52, 130, 255)')
     <div class="ex-field-stack">
       <MiuixInput v-model="text1" />
       <MiuixInput v-model="text2" label="With title" />
-      <MiuixInput v-model="text3" label="State-based" />
       <MiuixInput
         v-model="text4"
         label="Placeholder & SingleLine"
