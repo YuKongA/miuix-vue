@@ -12,6 +12,11 @@
 //   use onSurface with the computed alpha).
 // Drag moves the offset by dy/itemHeight; release snaps to the nearest item
 // (spring 1, 400) with momentum from the fling velocity. Wheel steps by one.
+//
+// The scroll/drag hit area is the digit column by default. To widen it (e.g. so
+// a narrow column is easier to grab on web), set the CSS variable
+// `--m-number-picker-hit-padding` (default 0) — it adds grabbable horizontal
+// padding flanking the digits without moving them off-centre.
 
 import { computed, ref } from 'vue'
 import { animate, motionValue } from 'motion-v'
@@ -230,6 +235,11 @@ function onWheel(e: WheelEvent): void {
     position: relative;
     height: 100%;
     // Content-width via the sizer → the scroll/drag hit area is the digits only.
+    // --m-number-picker-hit-padding (default 0) flanks the digits with extra
+    // grabbable padding so the interactive range can be widened on demand; the
+    // digits stay centred because items span the padding box and are centred.
+    padding-left: var(--m-number-picker-hit-padding, 0);
+    padding-right: var(--m-number-picker-hit-padding, 0);
     touch-action: none;
     user-select: none;
     cursor: grab;

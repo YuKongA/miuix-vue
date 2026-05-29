@@ -812,6 +812,9 @@ const pickedColor = ref('rgb(52, 130, 255)')
   justify-content: center;
   gap: 12px;
   padding: 12px;
+  // Widen each wheel's grabbable zone beyond the bare digits (the digits stay
+  // centred); demonstrates --m-number-picker-hit-padding.
+  --m-number-picker-hit-padding: 24px;
 }
 
 .ex-card-row {
