@@ -14,6 +14,7 @@ import {
   MiuixInput,
   MiuixProgressIndicator,
   MiuixRangeSlider,
+  MiuixSearchBar,
   MiuixSlider,
   MiuixSmallTitle,
   MiuixSnackbarHost,
@@ -34,6 +35,15 @@ import {
 const { theme, setTheme } = useTheme()
 function toggleTheme(): void {
   setTheme(theme.value === 'light' ? 'dark' : 'light')
+}
+
+// SearchBar
+const searchQuery = ref('')
+const searchExpanded = ref(false)
+const searchSuggestions = ['Suggestion 0', 'Suggestion 1', 'Suggestion 2', 'Suggestion 3']
+function pickSuggestion(s: string): void {
+  searchQuery.value = s
+  searchExpanded.value = false
 }
 
 // Checkbox
@@ -153,6 +163,23 @@ function confirmVolume(): void {
 
     <main class="app__scroll">
       <div class="app__content">
+        <!-- SearchBar -->
+        <MiuixSmallTitle text="SearchBar" />
+        <MiuixSearchBar
+          v-model="searchQuery"
+          v-model:expanded="searchExpanded"
+          label="Search"
+          class="search-section"
+        >
+          <MiuixBasicComponent
+            v-for="s in searchSuggestions"
+            :key="s"
+            :title="s"
+            clickable
+            @click="pickSuggestion(s)"
+          />
+        </MiuixSearchBar>
+
         <!-- Basic Component -->
         <MiuixSmallTitle text="Basic Component" />
         <MiuixCard class="section-card">
@@ -618,6 +645,10 @@ body {
     margin: 0 auto;
     padding: 8px 0 32px;
   }
+}
+
+.search-section {
+  margin-bottom: 12px;
 }
 
 .section-card {
