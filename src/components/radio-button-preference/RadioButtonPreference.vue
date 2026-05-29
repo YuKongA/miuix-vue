@@ -99,7 +99,7 @@ function select(): void {
 .m-radio-button-preference__end-extra {
   display: inline-flex;
   align-items: center;
+  // 8dp spacer; endActions inherit the ambient colour (no BasicComponent tint).
   margin-right: 8px;
-  color: var(--m-color-on-surface-variant-actions);
 }
 </style>

@@ -78,8 +78,9 @@ function toggle(): void {
 .m-switch-preference__end-extra {
   display: inline-flex;
   align-items: center;
+  // 8dp spacer before the control; content inherits the ambient colour
+  // (BasicComponent does not tint endActions).
   margin-right: 8px;
-  color: var(--m-color-on-surface-variant-actions);
 }
 
 .m-switch-preference__control {

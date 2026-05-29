@@ -114,14 +114,15 @@ function computePosition(): void {
   placeBelow.value = below
   if (below) {
     popupStyle.value = {
-      top: `${rect.bottom + 4}px`,
+      // verticalMargin 8 between the anchor and the popup.
+      top: `${rect.bottom + 8}px`,
       right: `${right}px`,
       maxHeight: `${belowSpace}px`,
       transformOrigin: 'top right',
     }
   } else {
     popupStyle.value = {
-      bottom: `${vh - rect.top + 4}px`,
+      bottom: `${vh - rect.top + 8}px`,
       right: `${right}px`,
       maxHeight: `${aboveSpace}px`,
       transformOrigin: 'bottom right',
@@ -138,17 +139,21 @@ function stopAnims(): void {
 function runEnter(): void {
   stopAnims()
   fAnim = animate(fractionMv, 1, fractionSpec)
-  aAnim = animate(alphaMv, 1, { duration: 0.2, ease: 'linear' })
+  // AlphaEnterAnimationSpec: tween 200ms, default easing = FastOutSlowIn.
+  aAnim = animate(alphaMv, 1, { duration: 0.2, ease: [0.4, 0, 0.2, 1] })
+  // DimEnterAnimationSpec: tween 300ms SinOut.
   dAnim = animate(dimMv, 1, { duration: 0.3, ease: sinOutEasing })
 }
 
 function runExit(): void {
   stopAnims()
   fAnim = animate(fractionMv, 0, fractionSpec)
-  dAnim = animate(dimMv, 0, { duration: 0.15, ease: 'linear' })
+  // DimExitAnimationSpec: tween 150ms SinOut.
+  dAnim = animate(dimMv, 0, { duration: 0.15, ease: sinOutEasing })
+  // AlphaExitAnimationSpec: tween 150ms, default easing = FastOutSlowIn.
   aAnim = animate(alphaMv, 0, {
     duration: 0.15,
-    ease: 'linear',
+    ease: [0.4, 0, 0.2, 1],
     onComplete: () => {
       rendered.value = false
     },
@@ -307,8 +312,9 @@ onUnmounted(stopAnims)
 
   &__popup {
     position: fixed;
+    // ListPopup MinWidth 200 / MaxWidth 288.
     min-width: 200px;
-    max-width: 280px;
+    max-width: 288px;
     padding: 0;
     border-radius: 16px;
     background: var(--m-color-surface-container);
@@ -352,6 +358,11 @@ onUnmounted(stopAnims)
       .m-dropdown-preference__item-summary {
         color: var(--m-color-disabled-on-secondary-variant);
       }
+      // checkColor: !enabled → disabledOnSecondaryVariant (not the primary
+      // selectedIndicatorColor) even when this disabled row is the selected one.
+      .m-dropdown-preference__check {
+        color: var(--m-color-disabled-on-secondary-variant);
+      }
     }
   }
 
@@ -365,6 +376,8 @@ onUnmounted(stopAnims)
     display: flex;
     flex-direction: column;
     min-width: 0;
+    // DropdownDefaults.MaxItemTextWidth.
+    max-width: 216px;
   }
 
   &__item-title {
