@@ -141,12 +141,13 @@ function onPointerDown(event: PointerEvent): void {
 
 function release(): void {
   pressed.value = false
+  // Spring the rotation back to flat about the SAME pivot it tilted around —
+  // leave tiltOrigin alone. Snapping the pivot to centre here would make the
+  // still-tilted card swing about a new point mid-spring, popping the pivot
+  // side up. The origin is harmless at rest (rotation 0) and is recomputed on
+  // the next press.
   tiltX.value = 0
   tiltY.value = 0
-  // Recenter the pivot so the spring-back rotates about the centre
-  // (source onCancelPointerInput resets transformOrigin to Center).
-  tiltOriginX.value = '50%'
-  tiltOriginY.value = '50%'
   clearPressTimer()
 }
 
