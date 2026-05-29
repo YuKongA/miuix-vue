@@ -106,7 +106,7 @@ function onClick(event: MouseEvent): void {
         <slot name="end" />
       </div>
     </div>
-    <div v-if="slots.bottom" class="m-basic-component__bottom">
+    <div v-if="slots.bottom" class="m-basic-component__bottom" @click.stop @pointerdown.stop>
       <slot name="bottom" />
     </div>
   </div>

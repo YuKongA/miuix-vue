@@ -33,6 +33,9 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
   change: [value: boolean]
+  // Fired on every activation; lets a parent drive multi-state (e.g. tri-state)
+  // cycling via one-way :model-value + :indeterminate (mirrors miuix onClick).
+  click: []
 }>()
 
 // SinkFeedback(sinkAmount = 0.85, spring(0.99, 986.96))
@@ -65,6 +68,7 @@ const scale = computed(() => (pressed.value && !props.disabled ? 0.85 : 1))
 
 function toggle(): void {
   if (props.disabled) return
+  emit('click')
   const next = !props.modelValue
   emit('update:modelValue', next)
   emit('change', next)

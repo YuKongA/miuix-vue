@@ -20,10 +20,19 @@ export type MiuixCardPressFeedback = 'none' | 'sink' | 'tilt'
 interface Props {
   /** Visual press feedback. miuix PressFeedbackType. */
   pressFeedback?: MiuixCardPressFeedback
+  /** Background color; defaults to surfaceContainer. */
+  color?: string
+  /** Content color; defaults to onSurfaceContainer. */
+  contentColor?: string
+  /** Draw the MiuixIndication alpha overlay on press (interactive cards). */
+  showIndication?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   pressFeedback: 'none',
+  color: 'var(--m-color-surface-container)',
+  contentColor: 'var(--m-color-on-surface-container)',
+  showIndication: false,
 })
 
 const emit = defineEmits<{
@@ -63,6 +72,8 @@ const motionTransition = computed(() => {
 const cardStyle = computed(() => ({
   transformOrigin: `${tiltOriginX.value} ${tiltOriginY.value}`,
   cursor: isInteractive.value ? 'pointer' : undefined,
+  background: props.color,
+  color: props.contentColor,
 }))
 
 function onPointerDown(event: PointerEvent): void {
@@ -98,7 +109,10 @@ function onClick(event: MouseEvent): void {
   <div class="m-card-wrapper" :class="{ 'm-card-wrapper--3d': props.pressFeedback === 'tilt' }">
     <Motion
       class="m-card"
-      :class="`m-card--feedback-${props.pressFeedback}`"
+      :class="[
+        `m-card--feedback-${props.pressFeedback}`,
+        { 'm-card--indication': props.showIndication },
+      ]"
       :style="cardStyle"
       :animate="animateTarget"
       :transition="motionTransition"
@@ -127,16 +141,37 @@ function onClick(event: MouseEvent): void {
 }
 
 .m-card {
+  position: relative;
   display: block;
   overflow: hidden;
   border-radius: var(--m-radius-md);
-  background: var(--m-color-surface-container);
-  color: var(--m-color-on-surface-container);
+  // background / color come from inline style (color / contentColor props).
 
   &--feedback-tilt {
     // backface visibility prevents flicker during the 3D rotation
     backface-visibility: hidden;
     will-change: transform;
+  }
+
+  // MiuixIndication alpha overlay on press (onBackground, additive, 120ms linear).
+  &--indication::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--m-color-on-background);
+    opacity: 0;
+    transition: opacity 120ms linear;
+    pointer-events: none;
+  }
+  &--indication:hover::after {
+    opacity: 0.06;
+  }
+  &--indication:active::after {
+    opacity: 0.1;
+  }
+  &--indication:hover:active::after {
+    opacity: 0.16;
   }
 }
 </style>
