@@ -46,6 +46,11 @@ export {
 } from './components/snackbar'
 export { MiuixSearchBar } from './components/search-bar'
 export { MiuixNumberPicker } from './components/number-picker'
+export { MiuixColorPicker } from './components/color-picker'
+export { MiuixFloatingActionButton } from './components/fab'
+export { MiuixTopAppBar } from './components/top-app-bar'
+export { MiuixNavigationBar, type MiuixNavigationItem } from './components/navigation-bar'
+export { MiuixScaffold } from './components/scaffold'
 
 export { IconArrowRight, IconArrowUpDown, IconCheck, IconSearch } from './icons'
 

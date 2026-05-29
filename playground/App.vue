@@ -8,6 +8,7 @@ import {
   MiuixButton,
   MiuixCard,
   MiuixCheckbox,
+  MiuixColorPicker,
   MiuixDialog,
   MiuixDivider,
   MiuixIconButton,
@@ -144,6 +145,9 @@ const tabs2 = ['Tab 1', 'Tab 2', 'Tab 3', 'Tab 4', 'Tab 5', 'Tab 6']
 const hourValue = ref(16)
 const minuteValue = ref(30)
 const pad2 = (v: number): string => String(v).padStart(2, '0')
+
+// ColorPicker
+const pickedColor = ref('#3482ff')
 
 function openVolumeDialog(): void {
   volumeText.value = String(Math.round(volume.value))
@@ -560,6 +564,19 @@ function confirmVolume(): void {
               class="grow"
             />
           </div>
+        </MiuixCard>
+
+        <!-- ColorPicker -->
+        <MiuixSmallTitle text="ColorPicker" />
+        <MiuixCard class="section-card section-card--pad">
+          <MiuixColorPicker v-model="pickedColor" />
+          <MiuixText
+            type="body2"
+            color="var(--m-color-on-surface-variant-summary)"
+            style="margin-top: 12px; display: block"
+          >
+            {{ pickedColor }}
+          </MiuixText>
         </MiuixCard>
 
         <!-- Card -->
