@@ -16,6 +16,7 @@ import {
   MiuixRangeSlider,
   MiuixSlider,
   MiuixSmallTitle,
+  MiuixSnackbarHost,
   MiuixSuperArrow,
   MiuixSuperCheckbox,
   MiuixSuperDropdown,
@@ -25,6 +26,7 @@ import {
   MiuixSwitch,
   MiuixTabRow,
   MiuixText,
+  showSnackbar,
   type MiuixDropdownItem,
   useTheme,
 } from '@/index'
@@ -339,6 +341,33 @@ function confirmVolume(): void {
           </div>
         </MiuixCard>
 
+        <!-- Snackbar -->
+        <MiuixSmallTitle text="Snackbar" />
+        <MiuixCard class="section-card section-card--pad">
+          <div class="button-row">
+            <MiuixButton
+              class="grow"
+              @click="showSnackbar({ message: 'A short snackbar message.' })"
+            >
+              Show
+            </MiuixButton>
+            <MiuixButton
+              class="grow"
+              @click="showSnackbar({ message: 'With an action.', actionLabel: 'Undo' })"
+            >
+              Action
+            </MiuixButton>
+            <MiuixButton
+              class="grow"
+              @click="
+                showSnackbar({ message: 'Dismissible.', withDismissAction: true, duration: 'long' })
+              "
+            >
+              Dismiss
+            </MiuixButton>
+          </div>
+        </MiuixCard>
+
         <!-- ProgressIndicator -->
         <MiuixSmallTitle text="ProgressIndicator" />
         <MiuixCard class="section-card section-card--pad">
@@ -512,6 +541,8 @@ function confirmVolume(): void {
         </div>
       </div>
     </main>
+
+    <MiuixSnackbarHost />
 
     <MiuixDialog v-model="dialogOpen" title="Dialog" summary="This is a dialog summary text.">
       <template #default="{ close }">

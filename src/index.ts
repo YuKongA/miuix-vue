@@ -36,6 +36,14 @@ export { MiuixTabRow } from './components/tab-row'
 export { MiuixProgressIndicator } from './components/progress-indicator'
 export { MiuixSuperDropdown, type MiuixDropdownItem } from './components/super-dropdown'
 export { MiuixSuperSpinner } from './components/super-spinner'
+export {
+  MiuixSnackbarHost,
+  showSnackbar,
+  dismissSnackbar,
+  type SnackbarOptions,
+  type SnackbarResult,
+  type SnackbarDuration,
+} from './components/snackbar'
 
 export { IconArrowRight, IconArrowUpDown, IconCheck, IconSearch } from './icons'
 
