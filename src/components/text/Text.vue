@@ -92,7 +92,9 @@ const style = computed(() => {
   // main (default)
   font-size: var(--m-text-main-size);
   font-weight: 400;
-  line-height: 1.2;
+  // Only the `paragraph` style sets a lineHeight in TextStyles.kt; all other
+  // presets leave it Unspecified (the font's natural metrics).
+  line-height: normal;
 
   &--paragraph {
     font-size: var(--m-text-paragraph-size);

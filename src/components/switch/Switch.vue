@@ -201,6 +201,10 @@ function onPointerLeave(): void {
     background: var(--m-color-on-primary);
     transform-origin: center center;
     pointer-events: none;
+    // miuix animates thumb color via animateColorAsState (default color spring,
+    // ≈ critically-damped, fast). checked/unchecked are both onPrimary/onSecondary
+    // = white so this is usually a no-op, but keep it faithful for overrides.
+    transition: background-color 100ms linear;
   }
 
   &:not(.m-switch--checked) &__thumb {

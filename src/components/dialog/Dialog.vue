@@ -11,7 +11,7 @@
 //   - summary: body1 (16) / centered / onSurfaceSecondary / mb 12
 //   - background = colorScheme.background; outsideMargin 12
 // Animations (1:1):
-//   enter content  folmeSpring(0.9, 0.3) → stiffness ≈ 4376, scale 0.8→1 + alpha
+//   enter content  folmeSpring(0.9, 0.3) → stiffness ≈ 438.65, scale 0.8→1 + alpha
 //   exit content   tween 260ms DecelerateEasing(1.5)
 //   dim in/out     tween 300/250ms DecelerateEasing(1.5)
 
