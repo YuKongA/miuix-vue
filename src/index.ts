@@ -28,18 +28,20 @@ export { MiuixIcon } from './components/icon'
 export { MiuixIconButton } from './components/icon-button'
 export { MiuixCheckbox } from './components/checkbox'
 export { MiuixRadioButton } from './components/radio-button'
-export { MiuixSuperSwitch } from './components/super-switch'
-export { MiuixSuperArrow } from './components/super-arrow'
-export { MiuixSuperCheckbox } from './components/super-checkbox'
-export { MiuixSuperRadioButton } from './components/super-radio-button'
+export { MiuixSwitchPreference } from './components/switch-preference'
+export { MiuixArrowPreference } from './components/arrow-preference'
+export { MiuixCheckboxPreference } from './components/checkbox-preference'
+export { MiuixRadioButtonPreference } from './components/radio-button-preference'
 export { MiuixTabRow } from './components/tab-row'
 export { MiuixProgressIndicator } from './components/progress-indicator'
-export { MiuixSuperDropdown, type MiuixDropdownItem } from './components/super-dropdown'
-export { MiuixSuperSpinner } from './components/super-spinner'
+export { MiuixDropdownPreference, type MiuixDropdownItem } from './components/dropdown-preference'
+export { MiuixSpinnerPreference } from './components/spinner-preference'
 export {
   MiuixSnackbarHost,
   showSnackbar,
   dismissSnackbar,
+  dismissNewestSnackbar,
+  dismissOldestSnackbar,
   type SnackbarOptions,
   type SnackbarResult,
   type SnackbarDuration,

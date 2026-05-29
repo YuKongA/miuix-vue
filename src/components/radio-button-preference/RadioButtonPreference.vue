@@ -11,7 +11,7 @@
 import { MiuixBasicComponent } from '../basic-component'
 import { MiuixRadioButton } from '../radio-button'
 
-defineOptions({ name: 'MiuixSuperRadioButton' })
+defineOptions({ name: 'MiuixRadioButtonPreference' })
 
 interface Props {
   /** Whether this option is selected (v-model). */
@@ -51,7 +51,7 @@ function select(): void {
     <template v-if="props.location === 'start' || $slots.start" #start>
       <span
         v-if="props.location === 'start'"
-        class="m-super-radio__control m-super-radio__control--start"
+        class="m-radio-button-preference__control m-radio-button-preference__control--start"
         @click.stop
         @pointerdown.stop
       >
@@ -64,12 +64,12 @@ function select(): void {
       <slot name="start" />
     </template>
     <template #end>
-      <span v-if="$slots.end" class="m-super-radio__end-extra">
+      <span v-if="$slots.end" class="m-radio-button-preference__end-extra">
         <slot name="end" />
       </span>
       <span
         v-if="props.location === 'end'"
-        class="m-super-radio__control"
+        class="m-radio-button-preference__control"
         @click.stop
         @pointerdown.stop
       >
@@ -87,7 +87,7 @@ function select(): void {
 </template>
 
 <style lang="scss">
-.m-super-radio__control {
+.m-radio-button-preference__control {
   display: inline-flex;
   align-items: center;
 
@@ -96,7 +96,7 @@ function select(): void {
   }
 }
 
-.m-super-radio__end-extra {
+.m-radio-button-preference__end-extra {
   display: inline-flex;
   align-items: center;
   margin-right: 8px;

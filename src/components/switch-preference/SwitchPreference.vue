@@ -2,29 +2,30 @@
 // Copyright 2026, miuix-vue contributors
 // SPDX-License-Identifier: Apache-2.0
 //
-// Ported from miuix-preference/.../CheckboxPreference.kt.
+// Ported from miuix-preference/.../SwitchPreference.kt.
 //
-// BasicComponent row with a Checkbox at the start (default) or end. The row
-// click toggles; the checkbox toggles once (events stopped). Start checkbox has
-// a 5dp gap to the title; end extra content sits left of an end checkbox.
+// BasicComponent row (title + summary) with a Switch at the end. Clicking the
+// row toggles; clicking the switch toggles once (its events are stopped so the
+// row click does not also fire). Optional extra `end` content sits left of the
+// switch with an 8dp gap.
 
 import { MiuixBasicComponent } from '../basic-component'
-import { MiuixCheckbox } from '../checkbox'
+import { MiuixSwitch } from '../switch'
 
-defineOptions({ name: 'MiuixSuperCheckbox' })
+defineOptions({ name: 'MiuixSwitchPreference' })
 
 interface Props {
   modelValue?: boolean
   title?: string
   summary?: string
   disabled?: boolean
-  location?: 'start' | 'end'
+  holdDown?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: false,
   disabled: false,
-  location: 'start',
+  holdDown: false,
 })
 
 const emit = defineEmits<{
@@ -48,35 +49,19 @@ function toggle(): void {
     :title="props.title"
     :summary="props.summary"
     :disabled="props.disabled"
+    :hold-down="props.holdDown"
     clickable
     @click="toggle"
   >
-    <template v-if="props.location === 'start' || $slots.start" #start>
-      <span
-        v-if="props.location === 'start'"
-        class="m-super-checkbox__control m-super-checkbox__control--start"
-        @click.stop
-        @pointerdown.stop
-      >
-        <MiuixCheckbox
-          :model-value="props.modelValue"
-          :disabled="props.disabled"
-          @update:model-value="setValue"
-        />
-      </span>
+    <template v-if="$slots.start" #start>
       <slot name="start" />
     </template>
     <template #end>
-      <span v-if="$slots.end" class="m-super-checkbox__end-extra">
+      <span v-if="$slots.end" class="m-switch-preference__end-extra">
         <slot name="end" />
       </span>
-      <span
-        v-if="props.location === 'end'"
-        class="m-super-checkbox__control"
-        @click.stop
-        @pointerdown.stop
-      >
-        <MiuixCheckbox
+      <span class="m-switch-preference__control" @click.stop @pointerdown.stop>
+        <MiuixSwitch
           :model-value="props.modelValue"
           :disabled="props.disabled"
           @update:model-value="setValue"
@@ -90,19 +75,15 @@ function toggle(): void {
 </template>
 
 <style lang="scss">
-.m-super-checkbox__control {
-  display: inline-flex;
-  align-items: center;
-
-  &--start {
-    margin-right: 5px;
-  }
-}
-
-.m-super-checkbox__end-extra {
+.m-switch-preference__end-extra {
   display: inline-flex;
   align-items: center;
   margin-right: 8px;
   color: var(--m-color-on-surface-variant-actions);
+}
+
+.m-switch-preference__control {
+  display: inline-flex;
+  align-items: center;
 }
 </style>

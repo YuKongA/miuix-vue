@@ -4,12 +4,12 @@
 //
 // Ported from miuix-preference OverlaySpinnerPreference. A Spinner is a Dropdown
 // whose items carry an icon (here a color swatch) + summary, and whose trigger
-// shows the selected item richly. Implemented as MiuixSuperDropdown in spinner
+// shows the selected item richly. Implemented as MiuixDropdownPreference in spinner
 // mode (web collapses Overlay/Window to one popup per goal).
 
-import { MiuixSuperDropdown, type MiuixDropdownItem } from '../super-dropdown'
+import { MiuixDropdownPreference, type MiuixDropdownItem } from '../dropdown-preference'
 
-defineOptions({ name: 'MiuixSuperSpinner' })
+defineOptions({ name: 'MiuixSpinnerPreference' })
 
 interface Props {
   modelValue?: number
@@ -32,7 +32,7 @@ defineEmits<{
 </script>
 
 <template>
-  <MiuixSuperDropdown
+  <MiuixDropdownPreference
     spinner
     :model-value="modelValue"
     :title="title"

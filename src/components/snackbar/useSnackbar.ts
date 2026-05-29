@@ -75,6 +75,18 @@ export function removeSnackbar(id: number): void {
   if (idx !== -1) snackbarStore.entries.splice(idx, 1)
 }
 
+/** Dismiss the newest visible snackbar (entries are prepended newest-first). */
+export function dismissNewestSnackbar(): void {
+  const entry = snackbarStore.entries.find((e) => e.visible)
+  if (entry) resolveEntry(entry, 'dismissed')
+}
+
+/** Dismiss the oldest visible snackbar. */
+export function dismissOldestSnackbar(): void {
+  const entry = [...snackbarStore.entries].reverse().find((e) => e.visible)
+  if (entry) resolveEntry(entry, 'dismissed')
+}
+
 /** Show a snackbar; resolves when dismissed or its action is performed. */
 export function showSnackbar(options: SnackbarOptions): Promise<SnackbarResult> {
   return new Promise<SnackbarResult>((resolve) => {

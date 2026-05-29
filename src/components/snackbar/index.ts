@@ -5,6 +5,8 @@ export { default as MiuixSnackbarHost } from './SnackbarHost.vue'
 export {
   showSnackbar,
   dismissSnackbar,
+  dismissNewestSnackbar,
+  dismissOldestSnackbar,
   type SnackbarOptions,
   type SnackbarResult,
   type SnackbarDuration,

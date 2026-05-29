@@ -13,7 +13,7 @@ import { computed } from 'vue'
 import { MiuixBasicComponent } from '../basic-component'
 import { IconArrowRight } from '../../icons'
 
-defineOptions({ name: 'MiuixSuperArrow' })
+defineOptions({ name: 'MiuixArrowPreference' })
 
 interface Props {
   title?: string
@@ -56,10 +56,10 @@ function onClick(event: MouseEvent): void {
       <slot name="start" />
     </template>
     <template #end>
-      <span v-if="$slots.end" class="m-super-arrow__end-extra">
+      <span v-if="$slots.end" class="m-arrow-preference__end-extra">
         <slot name="end" />
       </span>
-      <span class="m-super-arrow__chevron" :style="{ color: arrowColor }">
+      <span class="m-arrow-preference__chevron" :style="{ color: arrowColor }">
         <IconArrowRight />
       </span>
     </template>
@@ -70,14 +70,14 @@ function onClick(event: MouseEvent): void {
 </template>
 
 <style lang="scss">
-.m-super-arrow__end-extra {
+.m-arrow-preference__end-extra {
   display: inline-flex;
   align-items: center;
   margin-right: 8px;
   color: var(--m-color-on-surface-variant-actions);
 }
 
-.m-super-arrow__chevron {
+.m-arrow-preference__chevron {
   display: inline-flex;
   align-items: center;
 }
