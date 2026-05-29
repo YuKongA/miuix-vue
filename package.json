@@ -22,6 +22,11 @@
       "import": "./dist/miuix-vue.js",
       "require": "./dist/miuix-vue.cjs"
     },
+    "./icons": {
+      "types": "./dist/icons/extended/index.d.ts",
+      "import": "./dist/icons.js",
+      "require": "./dist/icons.cjs"
+    },
     "./style.css": "./dist/miuix-vue.css"
   },
   "files": [

@@ -27,9 +27,14 @@ export default defineConfig({
     sourcemap: true,
     copyPublicDir: false,
     lib: {
-      entry: fileURLToPath(new URL('./src/index.ts', import.meta.url)),
+      // Core + a separate entry for the extended icon pack, so the 155×5 icon
+      // data is opt-in (`miuix-vue/icons`) and never bloats the core bundle.
+      entry: {
+        'miuix-vue': fileURLToPath(new URL('./src/index.ts', import.meta.url)),
+        icons: fileURLToPath(new URL('./src/icons/extended/index.ts', import.meta.url)),
+      },
       name: 'MiuixVue',
-      fileName: 'miuix-vue',
+      fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'js' : 'cjs'}`,
       formats: ['es', 'cjs'],
     },
     rollupOptions: {
