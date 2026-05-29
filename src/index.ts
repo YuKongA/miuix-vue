@@ -45,6 +45,7 @@ export {
   type SnackbarDuration,
 } from './components/snackbar'
 export { MiuixSearchBar } from './components/search-bar'
+export { MiuixNumberPicker } from './components/number-picker'
 
 export { IconArrowRight, IconArrowUpDown, IconCheck, IconSearch } from './icons'
 

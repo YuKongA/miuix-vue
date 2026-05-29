@@ -12,6 +12,7 @@ import {
   MiuixDivider,
   MiuixIconButton,
   MiuixInput,
+  MiuixNumberPicker,
   MiuixProgressIndicator,
   MiuixRangeSlider,
   MiuixSearchBar,
@@ -138,6 +139,11 @@ const tab1 = ref(0)
 const tab2 = ref(0)
 const tabs1 = ['Tab 1', 'Tab 2', 'Tab 3']
 const tabs2 = ['Tab 1', 'Tab 2', 'Tab 3', 'Tab 4', 'Tab 5', 'Tab 6']
+
+// NumberPicker
+const hourValue = ref(16)
+const minuteValue = ref(30)
+const pad2 = (v: number): string => String(v).padStart(2, '0')
 
 function openVolumeDialog(): void {
   volumeText.value = String(Math.round(volume.value))
@@ -532,6 +538,30 @@ function confirmVolume(): void {
           </div>
         </MiuixCard>
 
+        <!-- NumberPicker -->
+        <MiuixSmallTitle text="NumberPicker" />
+        <MiuixCard class="section-card section-card--pad">
+          <div class="number-picker-row">
+            <MiuixNumberPicker
+              v-model="hourValue"
+              :min="0"
+              :max="23"
+              :label="pad2"
+              wrap-around
+              class="grow"
+            />
+            <MiuixText :size="20" weight="bold">:</MiuixText>
+            <MiuixNumberPicker
+              v-model="minuteValue"
+              :min="0"
+              :max="59"
+              :label="pad2"
+              wrap-around
+              class="grow"
+            />
+          </div>
+        </MiuixCard>
+
         <!-- Card -->
         <MiuixSmallTitle text="Card" />
         <MiuixCard
@@ -735,6 +765,13 @@ body {
 
 .tab-content {
   margin-top: 12px;
+}
+
+.number-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
 
 .card-row {
