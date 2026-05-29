@@ -22,8 +22,11 @@ defineOptions({ name: 'MiuixSnackbarHost' })
 // when one leaves this list. Oldest→newest top-to-bottom (newest at the bottom).
 const ordered = computed(() => snackbarStore.entries.filter((e) => e.visible).reverse())
 
-const enterTransition = { type: 'spring' as const, stiffness: 400, damping: 34 }
-const exitTransition = { duration: 0.2, ease: 'easeOut' as const }
+// miuix enter (slideInVertically + fadeIn) and exit (slideOut + fadeOut +
+// shrinkVertically) default to spring(dampingRatio=1, stiffness=MediumLow=400) —
+// critically damped. damping = 2*1*sqrt(400) = 40.
+const enterTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
+const exitTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
 </script>
 
 <template>
