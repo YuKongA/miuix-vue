@@ -5,6 +5,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import {
   MiuixBasicComponent,
+  MiuixBottomSheet,
   MiuixButton,
   MiuixCard,
   MiuixCheckbox,
@@ -76,6 +77,11 @@ const volumeText = ref('50')
 
 // Dialog
 const dialogOpen = ref(false)
+
+// BottomSheet
+const bottomSheetOpen = ref(false)
+const bottomSheetSwitch = ref(true)
+const bottomSheetSlider = ref(50)
 
 // Dropdown / Spinner
 const dropdownIndex = ref(0)
@@ -340,6 +346,17 @@ function confirmVolume(): void {
       <MiuixSmallTitle text="Dialog" />
       <MiuixCard class="section-card section-card--pad">
         <MiuixButton type="primary" @click="dialogOpen = true">Show Dialog</MiuixButton>
+      </MiuixCard>
+
+      <!-- BottomSheet -->
+      <MiuixSmallTitle text="BottomSheet" />
+      <MiuixCard class="section-card">
+        <MiuixSuperArrow
+          title="BottomSheet"
+          summary="Click to show a BottomSheet"
+          :hold-down="bottomSheetOpen"
+          @click="bottomSheetOpen = true"
+        />
       </MiuixCard>
 
       <!-- Dropdown -->
@@ -637,6 +654,26 @@ function confirmVolume(): void {
     </template>
   </MiuixScaffold>
 
+  <MiuixBottomSheet v-model="bottomSheetOpen" title="BottomSheet">
+    <template #start-action>
+      <MiuixIconButton aria-label="Cancel" @click="bottomSheetOpen = false">
+        <span class="app__sheet-glyph">✕</span>
+      </MiuixIconButton>
+    </template>
+    <template #end-action>
+      <MiuixIconButton aria-label="Confirm" @click="bottomSheetOpen = false">
+        <span class="app__sheet-glyph">✓</span>
+      </MiuixIconButton>
+    </template>
+    <MiuixSmallTitle text="Behavior Settings" />
+    <MiuixCard style="background: var(--m-color-secondary-container); margin-bottom: 12px">
+      <MiuixSuperSwitch v-model="bottomSheetSwitch" title="A Switch" summary="Inside the sheet" />
+    </MiuixCard>
+    <div style="padding: 0 4px 8px">
+      <MiuixSlider v-model="bottomSheetSlider" />
+    </div>
+  </MiuixBottomSheet>
+
   <MiuixSnackbarHost />
 
   <MiuixDialog v-model="dialogOpen" title="Dialog" summary="This is a dialog summary text.">
@@ -684,6 +721,11 @@ body {
 
   &__theme-glyph {
     font-size: 20px;
+    line-height: 1;
+  }
+
+  &__sheet-glyph {
+    font-size: 18px;
     line-height: 1;
   }
 
