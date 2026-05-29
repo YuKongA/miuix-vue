@@ -81,18 +81,19 @@ function select(index: number): void {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: 2px;
     padding: 0;
     border: 0;
     background: transparent;
-    // unselected: onSurfaceContainer @ 0.4
+    // unselected: onSurfaceContainer @ UnselectedAlpha 0.4. The colour is
+    // resolved directly per state in source (no animateColorAsState) — no
+    // opacity transition.
     color: var(--m-color-on-surface-container);
     opacity: 0.4;
     font-family: inherit;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: opacity 200ms ease;
 
+    // unselected pressed → UnselectedPressedAlpha 0.6
     &:active {
       opacity: 0.6;
     }
@@ -102,6 +103,11 @@ function select(index: number): void {
 
       .m-navigation-bar__label {
         font-weight: 700;
+      }
+
+      // selected pressed → SelectedPressedAlpha 0.5
+      &:active {
+        opacity: 0.5;
       }
     }
   }

@@ -11,8 +11,8 @@
 // → stiffness ≈ 273. Drag the handle down past 150 to dismiss (when allowDismiss).
 // Dim backdrop = windowDimming, fades with drag.
 
-import { AnimatePresence, Motion } from 'motion-v'
-import { ref } from 'vue'
+import { animate, AnimatePresence, Motion, motionValue } from 'motion-v'
+import { onUnmounted, ref } from 'vue'
 import { MiuixText } from '../text'
 import { folmeSpringByResponse } from '../../anim'
 
@@ -38,10 +38,14 @@ const emit = defineEmits<{
 }>()
 
 const sheetSpring = folmeSpringByResponse(0.9, 0.38)
+// Settle-back / dismiss travel uses folmeSpring(0.85, 0.4) in source.
+const settleSpring = folmeSpringByResponse(0.85, 0.4)
 const DISMISS_THRESHOLD = 150
 
+const dragYMv = motionValue(0)
 const dragY = ref(0)
-const dragging = ref(false)
+dragYMv.on('change', (v: number) => (dragY.value = v))
+let settleAnim: { stop: () => void } | null = null
 let activePointer: number | null = null
 let startY = 0
 
@@ -55,30 +59,31 @@ function onBackdrop(): void {
 }
 
 function onHandleDown(e: PointerEvent): void {
+  settleAnim?.stop()
   activePointer = e.pointerId
   startY = e.clientY
-  dragging.value = true
   ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
 }
 function onHandleMove(e: PointerEvent): void {
   if (activePointer !== e.pointerId) return
   const dy = e.clientY - startY
   // Damp upward drag (and downward when not dismissible), matching the source.
-  if (dy < 0) dragY.value = dy * 0.1
-  else dragY.value = props.allowDismiss ? dy : dy * 0.1
+  if (dy < 0) dragYMv.set(dy * 0.1)
+  else dragYMv.set(props.allowDismiss ? dy : dy * 0.1)
 }
 function onHandleUp(e: PointerEvent): void {
   if (activePointer !== e.pointerId) return
   activePointer = null
-  dragging.value = false
   ;(e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
   if (props.allowDismiss && dragY.value > DISMISS_THRESHOLD) {
-    dragY.value = 0
+    dragYMv.set(0)
     close()
   } else {
-    dragY.value = 0
+    // Settle back to rest on the source's folmeSpring(0.85, 0.4).
+    settleAnim = animate(dragYMv, 0, settleSpring)
   }
 }
+onUnmounted(() => settleAnim?.stop())
 </script>
 
 <template>
@@ -90,7 +95,8 @@ function onHandleUp(e: PointerEvent): void {
         :initial="{ opacity: 0 }"
         :animate="{ opacity: 1 }"
         :exit="{ opacity: 0 }"
-        :transition="{ duration: 0.3, ease: 'easeOut' }"
+        :transition="sheetSpring"
+        :exit-transition="sheetSpring"
         @click.self="onBackdrop"
       >
         <Motion
@@ -103,11 +109,7 @@ function onHandleUp(e: PointerEvent): void {
           :transition="sheetSpring"
           :exit-transition="sheetSpring"
         >
-          <div
-            class="m-bottom-sheet__inner"
-            :class="{ 'm-bottom-sheet__inner--dragging': dragging }"
-            :style="{ transform: `translateY(${dragY}px)` }"
-          >
+          <div class="m-bottom-sheet__inner" :style="{ transform: `translateY(${dragY}px)` }">
             <div
               class="m-bottom-sheet__handle-area"
               @pointerdown="onHandleDown"
@@ -124,7 +126,12 @@ function onHandleUp(e: PointerEvent): void {
               <div class="m-bottom-sheet__action m-bottom-sheet__action--start">
                 <slot name="start-action" />
               </div>
-              <MiuixText type="title4" weight="medium" class="m-bottom-sheet__title">
+              <MiuixText
+                type="title4"
+                weight="medium"
+                color="var(--m-color-on-surface)"
+                class="m-bottom-sheet__title"
+              >
                 {{ props.title }}
               </MiuixText>
               <div class="m-bottom-sheet__action m-bottom-sheet__action--end">
@@ -169,13 +176,10 @@ function onHandleUp(e: PointerEvent): void {
     border-radius: 28px 28px 0 0;
     background: var(--m-color-background);
     color: var(--m-color-on-background);
-    // insideMargin 24 horizontal
-    padding: 0 24px 24px;
+    // insideMargin = DpSize(24, 0): 24 horizontal, 0 bottom. The drag transform
+    // is spring-driven inline (settleSpring), so no CSS transition.
+    padding: 0 24px;
     overflow: hidden;
-
-    &:not(&--dragging) {
-      transition: transform 200ms ease-out;
-    }
   }
 
   &__handle-area {
@@ -197,21 +201,33 @@ function onHandleUp(e: PointerEvent): void {
     height: 4px;
     border-radius: 2px;
     background: var(--m-color-on-surface-variant-summary);
+    // handleAlpha = lerp(0.2, 0.35, isPressing).
     opacity: 0.2;
-    transition: width 120ms ease;
+    transform-origin: center;
+    // release: tween 150ms (press overrides to 100ms below).
+    transition:
+      width 150ms ease,
+      transform 150ms ease,
+      opacity 150ms ease;
   }
 
   &__handle-area:active &__handle {
     width: 55px;
     transform: scaleY(1.15);
+    opacity: 0.35;
+    // press: tween 100ms.
+    transition:
+      width 100ms ease,
+      transform 100ms ease,
+      opacity 100ms ease;
   }
 
   &__title-row {
     flex: none;
     display: flex;
     align-items: center;
-    min-height: 44px;
-    gap: 8px;
+    // TitleAndActionsRow: padding top 6 / bottom 12, no min-height, no gap.
+    padding: 6px 0 12px;
   }
 
   &__action {

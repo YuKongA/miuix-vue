@@ -5,12 +5,15 @@
 // Ported from miuix-ui/.../basic/TopAppBar.kt (static form — the scroll-driven
 // large-title collapse is omitted for the web MVP).
 //
-// Collapsed bar height 52, bg surface. Small title: title3 (20) Medium, centered.
-// Large mode adds a left-aligned large title (title1 (32) Normal, titlePadding 26)
-// + optional subtitle (onSurfaceVariantSummary, bottom padding 8) below the bar.
-// navigationIcon padding 16 (start), action icon padding 16 (end).
+// Collapsed bar height 52, bg surface. Small title: title3 (20) Medium, centered
+// (titlePadding 26 horizontal); an optional subtitle (body2, onSurfaceVariantSummary)
+// sits centered directly below it. Large mode swaps in a left-aligned large title
+// (title1 (32) Normal, titlePadding 26) + optional subtitle below the bar.
+// navigationIcon padding 16 (start), action icon padding 16 (end), actions gap 0.
+// The bottom padding before bottomContent = SubtitleBottomPadding 8 when a subtitle
+// is present, else LargeTitleBottomPadding 4. Title colours animate tween 50ms.
 
-import { useSlots } from 'vue'
+import { computed, useSlots } from 'vue'
 import { MiuixText } from '../text'
 
 defineOptions({ name: 'MiuixTopAppBar' })
@@ -32,11 +35,18 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const slots = useSlots()
+
+// expandedBottomPadding: SubtitleBottomPadding (8) with a subtitle, else
+// LargeTitleBottomPadding (4). Applied below whichever title block is last.
+const bottomPad = computed(() => (props.subtitle ? '8px' : '4px'))
 </script>
 
 <template>
   <div class="m-top-app-bar" :style="{ background: props.color }">
-    <div class="m-top-app-bar__row">
+    <div
+      class="m-top-app-bar__row"
+      :style="!props.large ? { paddingBottom: bottomPad } : undefined"
+    >
       <div class="m-top-app-bar__nav">
         <slot name="navigation" />
       </div>
@@ -44,12 +54,19 @@ const slots = useSlots()
         <MiuixText type="title3" weight="medium" color="var(--m-color-on-surface)">
           {{ props.title }}
         </MiuixText>
+        <MiuixText
+          v-if="props.subtitle"
+          type="body2"
+          color="var(--m-color-on-surface-variant-summary)"
+        >
+          {{ props.subtitle }}
+        </MiuixText>
       </div>
       <div class="m-top-app-bar__actions">
         <slot name="actions" />
       </div>
     </div>
-    <div v-if="props.large" class="m-top-app-bar__large">
+    <div v-if="props.large" class="m-top-app-bar__large" :style="{ paddingBottom: bottomPad }">
       <MiuixText type="title1" color="var(--m-color-on-surface)">
         {{ props.largeTitle ?? props.title }}
       </MiuixText>
@@ -71,39 +88,54 @@ const slots = useSlots()
 .m-top-app-bar {
   width: 100%;
 
+  // animateColorAsState(tween 50ms) on the title / large title / subtitle.
+  .m-text {
+    transition: color 50ms linear;
+  }
+
   &__row {
     position: relative;
     display: flex;
     align-items: center;
+    justify-content: center;
     min-height: 52px;
   }
 
-  &__nav {
+  // Navigation / actions are pinned to the collapsed 52px band (verticalCenter
+  // = 26) so they stay put when a subtitle grows the row.
+  &__nav,
+  &__actions {
+    position: absolute;
+    top: 0;
+    height: 52px;
     display: flex;
     align-items: center;
+  }
+  &__nav {
+    left: 0;
     padding-left: 16px;
     min-width: 0;
   }
-
-  &__title {
-    position: absolute;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
-  }
-
   &__actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-left: auto;
+    right: 0;
+    // actions Row uses Arrangement.End — no inter-icon spacing.
+    gap: 0;
     padding-right: 16px;
   }
 
+  &__title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    // titlePadding 26 horizontal.
+    padding: 0 26px;
+    text-align: center;
+    pointer-events: none;
+  }
+
   &__large {
-    padding: 0 26px 8px;
+    // titlePadding 26 horizontal; bottom padding bound inline (4 / 8).
+    padding: 0 26px;
   }
 
   &__bottom {
