@@ -1,5 +1,9 @@
 # miuix-vue
 
+[![npm version](https://img.shields.io/npm/v/miuix-vue.svg)](https://www.npmjs.com/package/miuix-vue)
+[![npm downloads](https://img.shields.io/npm/dm/miuix-vue.svg)](https://www.npmjs.com/package/miuix-vue)
+[![license](https://img.shields.io/npm/l/miuix-vue.svg)](./LICENSE)
+
 A Vue 3 component library with a clean, modern design language and physically-based spring animations.
 
 ## Installation
