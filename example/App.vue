@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // miuix-vue example app
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   MiuixIcon,
   MiuixIconButton,
@@ -34,6 +34,27 @@ const navIcons = [HorizontalSplit, Create, Image, Edit, Settings]
 const navIndex = ref(0)
 const activePage = computed(() => pages[navIndex.value])
 const activeTitle = computed(() => titles[navIndex.value])
+
+// Each tab keeps its own scroll position: save the outgoing tab's scrollTop
+// before the switch, restore the incoming tab's on page enter.
+interface Scroller {
+  getScrollTop: () => number
+  setScrollTop: (top: number) => void
+}
+const scrollerRef = ref<Scroller | null>(null)
+const scrollPositions = new Map<number, number>()
+
+watch(
+  navIndex,
+  (_next, prev) => {
+    scrollPositions.set(prev, scrollerRef.value?.getScrollTop() ?? 0)
+  },
+  { flush: 'pre' },
+)
+
+function onPageEnter(): void {
+  scrollerRef.value?.setScrollTop(scrollPositions.get(navIndex.value) ?? 0)
+}
 </script>
 
 <template>
@@ -48,8 +69,8 @@ const activeTitle = computed(() => titles[navIndex.value])
       </MiuixTopAppBar>
     </div>
 
-    <MiuixScrollArea class="app__body">
-      <Transition name="page" mode="out-in">
+    <MiuixScrollArea ref="scrollerRef" class="app__body">
+      <Transition name="page" mode="out-in" @enter="onPageEnter">
         <KeepAlive>
           <component :is="activePage" :key="navIndex" />
         </KeepAlive>
