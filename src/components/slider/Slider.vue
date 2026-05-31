@@ -380,6 +380,8 @@ function updateThumbHover(event: PointerEvent): void {
   hoveredThumb.value = Math.abs(pointer - thumbCenter.value) <= thumbHitRadius.value
 }
 
+// Click-to-set (Web idiom, CLAUDE.md #2): pointerdown jumps to the click, then
+// drag follows. miuix moves only on drag; RangeSlider matches.
 function onPointerDown(event: PointerEvent): void {
   if (props.disabled) return
   pressed.value = true

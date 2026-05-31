@@ -361,16 +361,24 @@ function onPointerDown(event: PointerEvent): void {
       endDragOffset = local
     }
   } else {
-    // Click on bare track: grab the closer thumb (matches source `else` branch
-    // in `onDragStarted`).
+    // Bare track: jump the closer thumb to the click, then drag from there
+    // (click-to-set, Web idiom per CLAUDE.md #2; miuix moves only on drag).
+    // Clicking directly on a thumb just grabs it (no jump) for fine-tuning.
     const diffStart = Math.abs(local - startThumbCenter.value)
     const diffEnd = Math.abs(local - endThumbCenter.value)
+    const candidate = offsetToValue(local)
     if (diffStart <= diffEnd) {
       isDraggingStart.value = true
       startDragOffset = local
+      const newStart = Math.min(candidate, currentEndValue.value)
+      currentStartValue.value = newStart
+      emitChange(newStart, currentEndValue.value)
     } else {
       isDraggingEnd.value = true
       endDragOffset = local
+      const newEnd = Math.max(candidate, currentStartValue.value)
+      currentEndValue.value = newEnd
+      emitChange(currentStartValue.value, newEnd)
     }
   }
 }
