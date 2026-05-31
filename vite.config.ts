@@ -3,7 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
-import dts from 'vite-plugin-dts'
+import dts from 'unplugin-dts/vite'
 
 import { buildDefines } from './vite.meta'
 
@@ -14,7 +14,7 @@ export default defineConfig({
     vue(),
     vueDevTools(),
     dts({
-      include: ['src/**/*'],
+      include: ['env.d.ts', 'src/**/*'],
       exclude: ['src/**/__tests__/*', '**/*.spec.ts'],
       outDirs: 'dist',
       entryRoot: 'src',

@@ -1,110 +1,99 @@
 # miuix-vue
 
-Vue 3 port of [miuix](https://github.com/YuKongA/miuix)'s visual and animation design language, for the Web.
-
-Status: **POC**. 6 components, 1:1 with miuix source for every spring, dimension, and easing.
-
-## What's in the box
-
-| Component       | What it does                                                                              |
-| :-------------- | :---------------------------------------------------------------------------------------- |
-| `MiuixButton`   | `default` / `primary` variants, MiuixIndication alpha overlay on hover/focus/press        |
-| `MiuixCard`     | `none` / `sink` / `tilt` press feedback with folmeSpring(0.8, 600) and folmeSpring(0.6, 400) |
-| `MiuixInput`    | v-model input, focus border 0 → 2px in primary color                                      |
-| `MiuixSwitch`   | drag + click toggle, three springs (offset / scale / track color), 50% snap threshold     |
-| `MiuixSlider`   | drag + tap to position, folmeSpring(0.6, 987) thumb scale, two progress springs           |
-| `MiuixDialog`   | Teleport + spring enter via folmeSpringByResponse(0.9, 0.3), DecelerateEasing(1.5) dim    |
-
-Plus:
-
-- `setThemeMode('system' \| 'light' \| 'dark')`, `setTheme('light' \| 'dark')` and `useTheme()` for theming
-- `folmeSpring(dampingRatio, stiffness)` + `folmeSpringByResponse(damping, response)` helpers
-- `accelerateEasing` / `decelerateEasing` / `sinOutEasing` ports of miuix custom easings
-- 53 color tokens and 14 text-style tokens as CSS variables (light + dark)
+A Vue 3 component library with a clean, modern design language and physically-based spring animations.
 
 ## Installation
 
 ```sh
-bun add miuix-vue motion-v
-# peers: vue >= 3.4, motion-v >= 2
+npm install miuix-vue motion-v vue
+# pnpm add miuix-vue motion-v vue
+# yarn add miuix-vue motion-v vue
+# bun add miuix-vue motion-v vue
 ```
 
+`vue` (^3.4) and `motion-v` (^2) are peer dependencies.
+
 ## Usage
+
+Import the components you need and the stylesheet once at your app entry:
+
+```ts
+// main.ts
+import 'miuix-vue/style.css'
+```
 
 ```vue
 <script setup lang="ts">
 import { ref } from 'vue'
-import { MiuixButton, MiuixSwitch, MiuixDialog, setTheme } from 'miuix-vue'
-import 'miuix-vue/style.css'
+import { MiuixButton, MiuixSwitch } from 'miuix-vue'
 
-const checked = ref(false)
-const open = ref(false)
+const on = ref(false)
 </script>
 
 <template>
-  <MiuixSwitch v-model="checked" />
-  <MiuixButton type="primary" @click="open = true">Open</MiuixButton>
-  <MiuixDialog v-model="open" title="Hello">
-    <p>Body content.</p>
-    <template #footer="{ close }">
-      <MiuixButton @click="close">Cancel</MiuixButton>
-      <MiuixButton type="primary" @click="close">OK</MiuixButton>
-    </template>
-  </MiuixDialog>
+  <MiuixButton type="primary" @click="on = !on">Toggle</MiuixButton>
+  <MiuixSwitch v-model="on" />
 </template>
 ```
 
-### Theming
+Components follow Vue conventions: string-enum props (`type="primary"`, `size="large"`), `v-model` for state, boolean flags (`disabled`, `loading`), slots for content, and emits for events.
 
-Two themes ship out of the box, light and dark. The default mode is `'system'`, which
-follows the OS `prefers-color-scheme` live:
+## Theming
+
+Colors, radii, and text styles are exposed as CSS variables, so you can override any token in your own stylesheet. The active theme is toggled by a `.m-theme-dark` class on `<html>`, managed for you:
 
 ```ts
-import { setTheme, setThemeMode, useTheme } from 'miuix-vue'
+import { setThemeMode, useTheme } from 'miuix-vue'
 
-setThemeMode('system') // follow the OS (default); also 'light' / 'dark'
-setTheme('dark') // pin an explicit theme (leaves 'system' mode)
+setThemeMode('system') // 'system' (follows OS) | 'light' | 'dark'
 
-const { theme, mode } = useTheme() // theme: 'light' | 'dark'; mode: 'system' | 'light' | 'dark'
+const { theme } = useTheme() // reactive 'light' | 'dark'
 ```
 
-All tokens are CSS variables under `:root` (light) and `.m-theme-dark`. Override globally or per-instance:
+## Icons
+
+`MiuixIcon` renders any icon from the extended pack, which ships as a separate entry so it stays out of your bundle until you import it:
 
 ```vue
-<MiuixButton type="primary" style="--m-color-primary: #ff5b8a"> Custom </MiuixButton>
+<script setup lang="ts">
+import { MiuixIcon } from 'miuix-vue'
+import { Alarm } from 'miuix-vue/icons'
+</script>
+
+<template>
+  <MiuixIcon :icon="Alarm" weight="regular" :size="24" />
+</template>
 ```
 
-### Animation helpers
+Individual icons tree-shake; each is available in five weights (`light` / `normal` / `regular` / `medium` / `demibold`).
 
-```ts
-import { folmeSpring, folmeSpringByResponse, decelerateEasing } from 'miuix-vue'
+## Components
 
-// Compose's spring(dampingRatio=0.7, stiffness=987) becomes:
-folmeSpring(0.7, 987) // { type: 'spring', stiffness: 987, damping: ≈43.98, mass: 1 }
+| Group                       | Components                                                                                                               |
+| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
+| **Basics**                  | Button · IconButton · FloatingActionButton · Card · Surface · BasicComponent · Text · SmallTitle · Divider · Icon        |
+| **Inputs**                  | Switch · Slider · RangeSlider · Input · Checkbox · RadioButton · NumberPicker · ColorPicker · SearchBar                  |
+| **Preference rows**         | SwitchPreference · ArrowPreference · CheckboxPreference · RadioButtonPreference · DropdownPreference · SpinnerPreference |
+| **Navigation & containers** | TopAppBar · NavigationBar · TabRow · BottomSheet · Dialog · ScrollArea                                                   |
+| **Feedback**                | ProgressIndicator · Snackbar                                                                                             |
 
-// Compose's folmeSpring(damping=0.9, response=0.3s) becomes:
-folmeSpringByResponse(0.9, 0.3) // stiffness = (2π / 0.3)² ≈ 4376
-
-// 4 custom easings, pass `decelerateEasing(1.5)` to motion-v's transition.ease
-decelerateEasing(1.5)
-```
+Snackbars are driven imperatively via `showSnackbar()` + a single `<MiuixSnackbarHost />`.
 
 ## Development
 
+This repo is a library plus a multi-page example app. [Bun](https://bun.sh) is the package manager.
+
 ```sh
-bun install
-bun run dev # example app at http://localhost:5173
-bun run build # library build to dist/
-bun run lint
-bun run format
+bun install          # install dependencies
+bun run dev          # start the example app on localhost:5173
+bun run build        # type-check and build the library to dist/
+bun run type-check   # vue-tsc type check
+bun run lint         # oxlint + ESLint
+bun run format       # Prettier
 ```
 
-Project rules (1:1 visual parity, API conventions, Bun-only) are in [CLAUDE.md](./CLAUDE.md).
+## Credits
 
-## Why this exists
+The design language and animation curves are based on [miuix](https://github.com/compose-miuix-ui/miuix), the Compose Multiplatform UI library. The underlying visual design draws on Xiaomi's design language; all related design rights belong to Xiaomi.
 
-miuix's interaction language — spring-based, not duration-based — feels distinct on Compose Android/Desktop. This package validates whether that feel survives the trip to Web/Vue. Every spring constant, every dp dimension, every easing curve traces back to a line in `miuix-ui/src/commonMain/`.
-
-## License
-
-Apache-2.0
+This is an independent, community project. It is **not** affiliated with, endorsed by, or sponsored by Xiaomi, and is not associated with MIUI or HyperOS. "Xiaomi", "MIUI", and "HyperOS" are trademarks of Xiaomi Corporation and are used here for descriptive purposes only.
