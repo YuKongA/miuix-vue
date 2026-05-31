@@ -20,7 +20,7 @@
 //   dim in/out     tween 300/250ms DecelerateEasing(1.5)
 // Not replicated (per goal): the predictive-back gesture (scale / drag-down).
 
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { AnimatePresence, Motion } from 'motion-v'
 import { decelerateEasing, folmeSpring, folmeSpringByResponse } from '../../anim'
 
@@ -86,8 +86,18 @@ const dimExitTransition = { duration: 0.25, ease: decelerateEasing(1.5) }
 
 function close(): void {
   emit('update:modelValue', false)
-  emit('close')
 }
+
+// Emit open/close from the single source of truth (modelValue) so they fire
+// however the dialog is toggled — close(), v-model, or a parent set — instead of
+// only from close() (which left the declared `open` event never emitted).
+watch(
+  () => props.modelValue,
+  (v) => {
+    if (v) emit('open')
+    else emit('close')
+  },
+)
 
 function onBackdropClick(): void {
   if (props.closeOnClickModal) close()
