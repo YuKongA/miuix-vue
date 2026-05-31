@@ -172,6 +172,17 @@ onBeforeUnmount(() => {
   visAnim?.stop()
   if (hideTimer) clearTimeout(hideTimer)
 })
+
+// Native scroll container — position is just scrollTop. Expose get/set so a parent
+// can persist it (e.g. per-tab scroll restoration); set also refreshes the thumb.
+defineExpose({
+  getScrollTop: (): number => viewportRef.value?.scrollTop ?? 0,
+  setScrollTop: (top: number): void => {
+    if (!viewportRef.value) return
+    viewportRef.value.scrollTop = top
+    recompute()
+  },
+})
 </script>
 
 <template>
