@@ -3,7 +3,7 @@
 
 import './theme/tokens.scss'
 
-export { setTheme, useTheme, type Theme } from './theme'
+export { setTheme, setThemeMode, useTheme, type Theme, type ThemeMode } from './theme'
 export {
   folmeSpring,
   folmeSpringByResponse,

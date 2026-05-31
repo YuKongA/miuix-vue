@@ -6,17 +6,22 @@ import {
   MiuixButton,
   MiuixCard,
   MiuixDialog,
+  MiuixDropdownPreference,
   MiuixSmallTitle,
   MiuixSwitchPreference,
   useTheme,
-  setTheme,
+  type ThemeMode,
 } from '@/index'
 import { showFpsMonitor } from '../appState'
 
-const { theme } = useTheme()
-const darkMode = computed({
-  get: () => theme.value === 'dark',
-  set: (v: boolean) => setTheme(v ? 'dark' : 'light'),
+// miuix SettingsPage "Color Mode" dropdown — System / Light / Dark, default System
+// (the Monet variants are out of scope: dynamic colour is excluded). Index 0 = System.
+const { mode, setThemeMode } = useTheme()
+const colorModes: ThemeMode[] = ['system', 'light', 'dark']
+const colorModeItems = ['System', 'Light', 'Dark']
+const colorMode = computed({
+  get: () => colorModes.indexOf(mode.value),
+  set: (i: number) => setThemeMode(colorModes[i] ?? 'system'),
 })
 
 const aboutOpen = ref(false)
@@ -35,7 +40,7 @@ function openRepo(): void {
   <div class="page">
     <MiuixSmallTitle text="Appearance" />
     <MiuixCard class="set-card">
-      <MiuixSwitchPreference v-model="darkMode" title="Dark mode" />
+      <MiuixDropdownPreference v-model="colorMode" title="Color Mode" :items="colorModeItems" />
       <MiuixSwitchPreference v-model="showFpsMonitor" title="Show FPS monitor" />
     </MiuixCard>
 
