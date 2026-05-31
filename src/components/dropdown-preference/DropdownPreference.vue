@@ -377,6 +377,7 @@ onUnmounted(stopAnims)
   }
 
   &__item {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -384,12 +385,53 @@ onUnmounted(stopAnims)
     box-sizing: border-box;
     padding: 12px 20px;
     border: 0;
+    outline: none;
     background: var(--m-color-surface-container);
     color: var(--m-color-on-surface-container);
     font-family: inherit;
     text-align: left;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+
+    // MiuixIndication: the default indication of miuix's .selectable() on each
+    // row — an onBackground overlay, additive hover .06 / focus .08 / press .10,
+    // 120ms linear. Disabled rows get none; hover is gated so a touch tap (which
+    // emulates :hover) doesn't leave the feedback stuck.
+    &:not(:disabled) {
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--m-color-on-background);
+        opacity: 0;
+        transition: opacity 120ms linear;
+        pointer-events: none;
+      }
+      &:focus-visible::after {
+        opacity: 0.08;
+      }
+      &:active::after {
+        opacity: 0.1;
+      }
+      &:focus-visible:active::after {
+        opacity: 0.18;
+      }
+
+      @media (hover: hover) {
+        &:hover::after {
+          opacity: 0.06;
+        }
+        &:hover:focus-visible::after {
+          opacity: 0.14;
+        }
+        &:hover:active::after {
+          opacity: 0.16;
+        }
+        &:hover:focus-visible:active::after {
+          opacity: 0.24;
+        }
+      }
+    }
 
     &--first {
       padding-top: 20px;
