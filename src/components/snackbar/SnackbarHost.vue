@@ -102,6 +102,10 @@ const exitTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
   &__inner {
     display: flex;
     align-items: center;
+    // border-box so min-height 44 INCLUDES the inside padding, matching miuix's
+    // defaultMinSize(44).padding(insideMargin) — content-box would make it 44+16
+    // = 60 tall. (No global box-sizing reset in this project.)
+    box-sizing: border-box;
     min-height: 44px;
     // inside margin 12 horizontal, 8 vertical
     padding: 8px 12px;
