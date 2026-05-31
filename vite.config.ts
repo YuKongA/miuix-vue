@@ -9,7 +9,6 @@ import { buildDefines } from './vite.meta'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Version / git-hash defines, shared with the example-site build (vite.meta.ts).
   define: buildDefines(),
   plugins: [
     vue(),
@@ -31,24 +30,15 @@ export default defineConfig({
     sourcemap: true,
     copyPublicDir: false,
     lib: {
-      // Core + a separate entry for the extended icon pack, so the 155×5 icon
-      // data is opt-in (`miuix-vue/icons`) and never bloats the core bundle.
       entry: {
         'miuix-vue': fileURLToPath(new URL('./src/index.ts', import.meta.url)),
         icons: fileURLToPath(new URL('./src/icons/extended/index.ts', import.meta.url)),
       },
-      name: 'MiuixVue',
       fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'js' : 'cjs'}`,
       formats: ['es', 'cjs'],
     },
-    rollupOptions: {
+    rolldownOptions: {
       external: ['vue', 'motion-v'],
-      output: {
-        globals: {
-          vue: 'Vue',
-          'motion-v': 'MotionV',
-        },
-      },
     },
   },
 })
