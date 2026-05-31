@@ -237,7 +237,7 @@ onUnmounted(stopAnims)
 </script>
 
 <template>
-  <div class="m-dropdown-preference">
+  <div class="m-dropdown-preference" :class="{ 'm-dropdown-preference--disabled': props.disabled }">
     <MiuixBasicComponent
       :title="props.title"
       :summary="props.summary"
@@ -334,6 +334,14 @@ onUnmounted(stopAnims)
     align-items: center;
     margin-left: 8px;
     color: var(--m-color-on-surface-variant-actions);
+  }
+
+  // Disabled trigger: value + arrow dim to the disabled action color, matching
+  // miuix (actionColor = disabledOnSecondaryVariant when !enabled) so the right
+  // side reads as disabled like the title/summary, not the enabled actions color.
+  &--disabled &__value,
+  &--disabled &__arrow {
+    color: var(--m-color-disabled-on-secondary-variant);
   }
 
   &__swatch {
