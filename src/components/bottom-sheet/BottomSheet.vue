@@ -12,7 +12,7 @@
 // Dim backdrop = windowDimming, fades with drag.
 
 import { animate, AnimatePresence, Motion, motionValue } from 'motion-v'
-import { onUnmounted, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { MiuixText } from '../text'
 import { folmeSpringByResponse } from '../../anim'
 
@@ -45,6 +45,11 @@ const DISMISS_THRESHOLD = 150
 const dragYMv = motionValue(0)
 const dragY = ref(0)
 dragYMv.on('change', (v: number) => (dragY.value = v))
+
+// Upward overscroll (dragY < 0) lifts the sheet and exposes a gap below it. Fill
+// it with a sheet-coloured strip pinned to the bottom — miuix OverscrollBackground,
+// height = -dragOffsetY + 1 while dragged up (+1 hides the hairline seam).
+const overscrollHeight = computed(() => (dragY.value < 0 ? -dragY.value + 1 : 0))
 let settleAnim: { stop: () => void } | null = null
 let activePointer: number | null = null
 let startY = 0
@@ -109,6 +114,11 @@ onUnmounted(() => settleAnim?.stop())
           :transition="sheetSpring"
           :exit-transition="sheetSpring"
         >
+          <div
+            class="m-bottom-sheet__overscroll"
+            :style="{ height: `${overscrollHeight}px` }"
+            aria-hidden="true"
+          />
           <div class="m-bottom-sheet__inner" :style="{ transform: `translateY(${dragY}px)` }">
             <div
               class="m-bottom-sheet__handle-area"
@@ -161,11 +171,24 @@ onUnmounted(() => settleAnim?.stop())
   }
 
   &__sheet {
+    position: relative;
     width: 100%;
     max-width: 640px;
     max-height: calc(100vh - 24px);
     display: flex;
     flex-direction: column;
+  }
+
+  // Fills the gap exposed at the bottom when the sheet is dragged up past its rest
+  // (miuix OverscrollBackground). Pinned to the sheet bottom, behind __inner, same
+  // background; height tracks the upward overscroll.
+  &__overscroll {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--m-color-background);
+    pointer-events: none;
   }
 
   &__inner {
