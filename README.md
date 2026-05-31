@@ -17,7 +17,7 @@ Status: **POC**. 6 components, 1:1 with miuix source for every spring, dimension
 
 Plus:
 
-- `setTheme('light' \| 'dark')` and `useTheme()` for theming
+- `setThemeMode('system' \| 'light' \| 'dark')`, `setTheme('light' \| 'dark')` and `useTheme()` for theming
 - `folmeSpring(dampingRatio, stiffness)` + `folmeSpringByResponse(damping, response)` helpers
 - `accelerateEasing` / `decelerateEasing` / `sinOutEasing` ports of miuix custom easings
 - 53 color tokens and 14 text-style tokens as CSS variables (light + dark)
@@ -56,11 +56,16 @@ const open = ref(false)
 
 ### Theming
 
-Two themes ship out of the box, light and dark:
+Two themes ship out of the box, light and dark. The default mode is `'system'`, which
+follows the OS `prefers-color-scheme` live:
 
 ```ts
-import { setTheme } from 'miuix-vue'
-setTheme('dark')
+import { setTheme, setThemeMode, useTheme } from 'miuix-vue'
+
+setThemeMode('system') // follow the OS (default); also 'light' / 'dark'
+setTheme('dark') // pin an explicit theme (leaves 'system' mode)
+
+const { theme, mode } = useTheme() // theme: 'light' | 'dark'; mode: 'system' | 'light' | 'dark'
 ```
 
 All tokens are CSS variables under `:root` (light) and `.m-theme-dark`. Override globally or per-instance:
