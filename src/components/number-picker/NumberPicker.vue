@@ -11,14 +11,16 @@
 //   color lerps onSurface → onSurfaceSecondary (same hue, alpha-dominated → we
 //   use onSurface with the computed alpha).
 // Drag moves the offset by dy/itemHeight; release snaps to the nearest item
-// (spring 1, 400) with momentum from the fling velocity. Wheel steps by one.
+// (spring 1, 400) with momentum from the fling velocity. Mouse wheel scrolls
+// smoothly: notches accumulate into a target the offset springs toward, then it
+// snaps + commits once the wheel idles — not an instant per-notch teleport.
 //
 // The scroll/drag hit area is the digit column by default. To widen it (e.g. so
 // a narrow column is easier to grab on web), set the CSS variable
 // `--m-number-picker-hit-padding` (default 0) — it adds grabbable horizontal
 // padding flanking the digits without moving them off-centre.
 
-import { computed, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { animate, motionValue } from 'motion-v'
 
 defineOptions({ name: 'MiuixNumberPicker' })
@@ -182,13 +184,48 @@ function onPointerUp(e: PointerEvent): void {
   })
 }
 
+// Wheel state: a gesture accumulates notches into `wheelTarget` (offset units,
+// relative to the value at gesture start, which stays fixed until commit), the
+// offset springs toward it, and a short idle settles + commits.
+let wheelActive = false
+let wheelTarget = 0
+let wheelTimer: ReturnType<typeof setTimeout> | null = null
+
+function settleWheel(): void {
+  wheelTimer = null
+  const target = clampOffset(Math.round(wheelTarget))
+  anim?.stop()
+  anim = animate(offsetMv, target, {
+    ...snapSpring,
+    onComplete: () => {
+      commit(target)
+      wheelActive = false
+      wheelTarget = 0
+    },
+  })
+}
+
 function onWheel(e: WheelEvent): void {
   if (props.disabled) return
   e.preventDefault()
   const dir = Math.sign(e.deltaY)
   if (dir === 0) return
-  commit(clampOffset(dir))
+  // New gesture: seed the target from the resting offset (0 between commits).
+  if (!wheelActive) {
+    wheelActive = true
+    wheelTarget = offset.value
+  }
+  anim?.stop()
+  wheelTarget = clampOffset(wheelTarget + dir)
+  anim = animate(offsetMv, wheelTarget, snapSpring)
+  if (wheelTimer !== null) clearTimeout(wheelTimer)
+  wheelTimer = setTimeout(settleWheel, 140)
 }
+
+onUnmounted(() => {
+  anim?.stop()
+  if (wheelTimer !== null) clearTimeout(wheelTimer)
+})
 </script>
 
 <template>
