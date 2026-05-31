@@ -10,8 +10,9 @@
 //   alpha = (1-nd)(1 - nd*0.5);  scale = 1 - 0.2*nd;  yOffset = d * itemHeight
 //   color lerps onSurface → onSurfaceSecondary (same hue, alpha-dominated → we
 //   use onSurface with the computed alpha).
-// Drag moves the offset by dy/itemHeight; release snaps to the nearest item
-// (spring 1, 400) with momentum from the fling velocity. Mouse wheel scrolls
+// Drag moves the offset by dy/itemHeight; release projects the fling
+// (exponentialDecay friction 2 → v/8.4), rounds to the nearest item, and springs
+// there (spring 1, 400) carrying the fling velocity so it coasts. Mouse wheel scrolls
 // smoothly: notches accumulate into a target the offset springs toward, then it
 // snaps + commits once the wheel idles — not an instant per-notch teleport.
 //
@@ -54,6 +55,9 @@ const emit = defineEmits<{
 }>()
 
 const snapSpring = { type: 'spring' as const, stiffness: 400, damping: 40 }
+// miuix flings with exponentialDecay(frictionMultiplier=2): the decay's resting
+// displacement is velocity / (4.2 × 2) = velocity / 8.4 (items), then it snaps.
+const DECAY_FRICTION = 4.2 * 2
 
 const count = computed(() => props.max - props.min + 1)
 const half = computed(() => Math.floor(props.visibleItemCount / 2))
@@ -174,12 +178,17 @@ function onPointerUp(e: PointerEvent): void {
   if (activePointer !== e.pointerId) return
   activePointer = null
   ;(e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
-  // Momentum: convert velocity (px/ms) to items, add to current offset.
+  // Fling: project where miuix's exponentialDecay would settle (offset + v/8.4),
+  // round to the nearest item, and spring there (spring 1, 400) CARRYING the fling
+  // velocity so the wheel coasts in instead of easing from rest. At a clamped
+  // range edge, drop the carried velocity so a hard flick can't over-scroll into
+  // blank space past min/max.
   const velItems = (-velocity * 1000) / props.itemHeight // items per second
-  const projected = clampOffset(offset.value + velItems * 0.12)
-  const target = clampOffset(Math.round(projected))
+  const rawTarget = Math.round(offset.value + velItems / DECAY_FRICTION)
+  const target = clampOffset(rawTarget)
   anim = animate(offsetMv, target, {
     ...snapSpring,
+    velocity: target === rawTarget ? velItems : 0,
     onComplete: () => commit(target),
   })
 }
