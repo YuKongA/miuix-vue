@@ -529,14 +529,18 @@ const pickedColor = ref('rgb(52, 130, 255)')
     <MiuixSmallTitle text="RangeSlider" />
     <MiuixCard class="ex-card">
       <div class="ex-slider-stack">
-        <MiuixText type="body2">Range: {{ rangeNormal[0] }}% - {{ rangeNormal[1] }}%</MiuixText>
+        <MiuixText type="body2"
+          >Range: {{ Math.round(rangeNormal[0]) }}% - {{ Math.round(rangeNormal[1]) }}%</MiuixText
+        >
         <MiuixRangeSlider v-model="rangeNormal" />
         <MiuixText type="body2"
-          >With Key Points: {{ rangeSteps[0] }} - {{ rangeSteps[1] }}</MiuixText
+          >With Key Points: {{ Math.round(rangeSteps[0]) }} -
+          {{ Math.round(rangeSteps[1]) }}</MiuixText
         >
         <MiuixRangeSlider v-model="rangeSteps" :max="8" :step="1" show-key-points />
         <MiuixText type="body2"
-          >Custom Points: {{ rangeCustom[0] }}% - {{ rangeCustom[1] }}%</MiuixText
+          >Custom Points: {{ Math.round(rangeCustom[0]) }}% -
+          {{ Math.round(rangeCustom[1]) }}%</MiuixText
         >
         <MiuixRangeSlider
           v-model="rangeCustom"
@@ -544,7 +548,8 @@ const pickedColor = ref('rgb(52, 130, 255)')
           show-key-points
         />
         <MiuixText type="body2"
-          >Disabled: {{ rangeDisabled[0] }}% - {{ rangeDisabled[1] }}%</MiuixText
+          >Disabled: {{ Math.round(rangeDisabled[0]) }}% -
+          {{ Math.round(rangeDisabled[1]) }}%</MiuixText
         >
         <MiuixRangeSlider v-model="rangeDisabled" disabled />
       </div>
@@ -847,10 +852,12 @@ const pickedColor = ref('rgb(52, 130, 255)')
   .m-text {
     margin-bottom: 4px;
   }
-  .m-slider {
+  .m-slider,
+  .m-range-slider {
     margin-bottom: 12px;
   }
-  .m-slider:last-child {
+  .m-slider:last-child,
+  .m-range-slider:last-child {
     margin-bottom: 0;
   }
 }
