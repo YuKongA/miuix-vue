@@ -869,7 +869,11 @@ const pickedColor = ref('rgb(52, 130, 255)')
   padding: 12px;
 }
 .ex-vslider {
+  // Equal-width columns (miuix weight(1f)) + min-width:0 so the label's changing
+  // digit count can't grow the column and reflow the row (drag-time jitter).
   display: flex;
+  flex: 1;
+  min-width: 0;
   flex-direction: column;
   align-items: center;
   gap: 6px;
@@ -878,6 +882,14 @@ const pickedColor = ref('rgb(52, 130, 255)')
   .m-slider--vertical {
     width: 25px;
     flex: 1;
+  }
+
+  // Label fills the fixed-width column and centres without wrapping (miuix
+  // fillMaxWidth() + TextAlign.Center) — value width no longer affects layout.
+  .m-text {
+    width: 100%;
+    text-align: center;
+    white-space: nowrap;
   }
 }
 
