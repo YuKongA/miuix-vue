@@ -6,12 +6,12 @@ import {
   MiuixButton,
   MiuixCard,
   MiuixDialog,
-  MiuixDropdownPreference,
   MiuixSmallTitle,
   MiuixSwitchPreference,
   useTheme,
   setTheme,
 } from '@/index'
+import { showFpsMonitor } from '../appState'
 
 const { theme } = useTheme()
 const darkMode = computed({
@@ -19,50 +19,46 @@ const darkMode = computed({
   set: (v: boolean) => setTheme(v ? 'dark' : 'light'),
 })
 
-const fps = ref(false)
-const langIndex = ref(0)
-const languages = ['System', 'English', '简体中文']
 const aboutOpen = ref(false)
+// Version + build commit, injected by Vite `define` (vite.config.ts).
+const versionSummary = `Version ${__APP_VERSION__} (${__GIT_HASH__})`
+
+// Web equivalent of the miuix example's uriHandler.openUri — opens the repo in a
+// new tab; noopener/noreferrer so the opened page can't reach back via window.opener.
+const REPO_URL = 'https://github.com/YuKongA/miuix-vue'
+function openRepo(): void {
+  window.open(REPO_URL, '_blank', 'noopener,noreferrer')
+}
 </script>
 
 <template>
   <div class="page">
     <MiuixSmallTitle text="Appearance" />
     <MiuixCard class="set-card">
-      <MiuixSwitchPreference
-        v-model="darkMode"
-        title="Dark mode"
-        summary="Toggle light / dark theme"
-      />
-      <MiuixSwitchPreference v-model="fps" title="Show FPS monitor" />
-      <MiuixDropdownPreference v-model="langIndex" title="Language" :items="languages" />
+      <MiuixSwitchPreference v-model="darkMode" title="Dark mode" />
+      <MiuixSwitchPreference v-model="showFpsMonitor" title="Show FPS monitor" />
     </MiuixCard>
 
     <MiuixSmallTitle text="About" />
     <MiuixCard class="set-card">
       <MiuixArrowPreference
         title="About miuix-vue"
-        summary="Version 0.0.0"
+        :summary="versionSummary"
         :hold-down="aboutOpen"
         @click="aboutOpen = true"
       />
       <MiuixArrowPreference
-        title="Source"
-        summary="github.com/compose-miuix-ui/miuix"
-        @click="() => {}"
+        title="Github repo"
+        summary="github.com/YuKongA/miuix-vue"
+        @click="openRepo"
       />
     </MiuixCard>
 
-    <MiuixDialog
-      v-model="aboutOpen"
-      title="miuix-vue"
-      summary="A Vue 3 port of miuix's visual + animation design language."
-    >
+    <MiuixDialog v-model="aboutOpen" title="miuix-vue" summary="A UI library for Vue 3.">
       <template #default="{ close }">
         <MiuixButton type="primary" style="width: 100%" @click="close">OK</MiuixButton>
       </template>
     </MiuixDialog>
-    <div style="height: 24px" />
   </div>
 </template>
 

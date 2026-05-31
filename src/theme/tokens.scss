@@ -4,7 +4,13 @@
 // Design tokens copied 1:1 from miuix Colors.kt and TextStyles.kt.
 // Source: miuix-ui/src/commonMain/kotlin/top/yukonga/miuix/kmp/theme/
 
-:root {
+// Light is the default theme on :root; `.m-theme-light` re-asserts the same
+// values so any subtree can be force-scoped to light even under a dark root —
+// mirroring the `.m-theme-dark` scope below. (The example Color page uses both
+// to show the light and dark palettes side by side.) The app-wide theme switch
+// is still just toggling `.m-theme-dark` on <html> (see theme/index.ts).
+:root,
+.m-theme-light {
   // ---- Color tokens (light) ----
   // Primary
   --m-color-primary: #3482ff;
@@ -82,7 +88,10 @@
   --m-color-slider-key-point: #a3b3cd4d;
   --m-color-slider-key-point-foreground: #6eb5ff;
   --m-color-slider-background: #0000000f;
+}
 
+// Text + radius tokens are theme-independent, so they live on :root only.
+:root {
   // ---- Text style tokens ----
   // 1dp = 1px @ 1x DPR. Compose .sp maps to logical pixels here.
   --m-text-main-size: 17px;

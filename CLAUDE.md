@@ -112,7 +112,7 @@ Slider 磁吸阈值默认 **0.02**（值域的 2%）。
 2. 把每一个尺寸、颜色引用、spring 参数都抠出来
 3. 设计 Vue 风格的 API（props/slots/emits），遵守铁律 #2
 4. 用 `folmeSpring()` + CSS 变量实现
-5. 在 `playground/pages/`（如 `MainPage.vue` 对应小节）加一段可对照的 demo
+5. 在 `example/pages/`（如 `MainPage.vue` 对应小节）加一段可对照的 demo
 6. 跑 miuix `example/`（Android / Desktop），人眼对照观感
 
 ## 提交信息（Conventional Commits）

@@ -673,8 +673,6 @@ const pickedColor = ref('rgb(52, 130, 255)')
       >
     </MiuixCard>
 
-    <div class="ex-spacer" />
-
     <!-- Overlays -->
     <MiuixDialog
       v-model="dialogOpen"
@@ -739,7 +737,18 @@ const pickedColor = ref('rgb(52, 130, 255)')
 
 <style lang="scss">
 .page {
-  padding-bottom: 24px;
+  // 12dp gap above the bottom bar. The bars sit OUTSIDE the scroll area (no nav-bar
+  // inset needed, unlike miuix's Scaffold contentPadding), so the gap is just this
+  // padding. It's padding (not a trailing margin/spacer) because a scroll container
+  // reliably includes content padding in its scroll height but may clip a trailing
+  // child margin; the rule below zeroes the last section's own margin so the gap is
+  // exactly 12px on every page. Teleported dialogs/sheets leave comment anchors, so
+  // `:last-child` resolves to the last real section.
+  padding-bottom: 12px;
+
+  > :last-child {
+    margin-bottom: 0;
+  }
 }
 
 // Card with rows (no inner padding) — 12px side margins, 12 bottom.
@@ -768,9 +777,6 @@ const pickedColor = ref('rgb(52, 130, 255)')
 }
 .ex-gap8 {
   width: 8px;
-}
-.ex-spacer {
-  height: 12px;
 }
 
 .ex-btn-row {

@@ -1,20 +1,19 @@
 <script setup lang="ts">
-// miuix-vue example app — a TopAppBar, a 5-tab bottom NavigationBar, and a
-// keep-alive paged body (Home / Icon / Color / TextStyle / Settings). The
-// app shell is plain flex layout (no Scaffold): on web, flexbox auto-sizes
-// the scroll body between the fixed bars, so no measure/inset coordination is
-// needed. SnackbarHost stays a standalone teleport singleton.
+// miuix-vue example app
 import { computed, ref } from 'vue'
 import {
   MiuixIcon,
   MiuixIconButton,
   MiuixNavigationBar,
+  MiuixScrollArea,
   MiuixSnackbarHost,
   MiuixTopAppBar,
   useTheme,
   type MiuixNavigationItem,
 } from '@/index'
 import { Create, Edit, HorizontalSplit, Image, Settings, Theme } from '@/icons/extended'
+import { showFpsMonitor } from './appState'
+import FpsMonitor from './components/FpsMonitor.vue'
 import MainPage from './pages/MainPage.vue'
 import IconPage from './pages/IconPage.vue'
 import ColorPage from './pages/ColorPage.vue'
@@ -49,13 +48,13 @@ const activeTitle = computed(() => titles[navIndex.value])
       </MiuixTopAppBar>
     </div>
 
-    <div class="app__body">
+    <MiuixScrollArea class="app__body">
       <Transition name="page" mode="out-in">
         <KeepAlive>
           <component :is="activePage" :key="navIndex" />
         </KeepAlive>
       </Transition>
-    </div>
+    </MiuixScrollArea>
 
     <div class="app__bottom">
       <MiuixNavigationBar v-model="navIndex" :items="navItems">
@@ -67,6 +66,10 @@ const activeTitle = computed(() => titles[navIndex.value])
   </div>
 
   <MiuixSnackbarHost />
+
+  <Transition name="fps-fade">
+    <FpsMonitor v-if="showFpsMonitor" />
+  </Transition>
 </template>
 
 <style lang="scss">
@@ -77,7 +80,16 @@ body {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    'MiSans VF',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    sans-serif;
   background: var(--m-color-background);
   color: var(--m-color-on-background);
 }
@@ -95,16 +107,12 @@ body {
     z-index: 10;
   }
 
-  // flex:1 + min-height:0 makes the body take exactly the gap between the
-  // fixed bars and scroll internally (the one flex invariant worth pinning).
+  // flex:1 + min-height:0 makes the body take exactly the gap between the fixed
+  // bars; MiuixScrollArea scrolls internally (its viewport clips overflow-x, so
+  // the Card tilt's 3D pop-out never spawns a transient page scrollbar).
   &__body {
-    position: relative;
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
-    // The Card tilt's 3D pop-out is visual overflow; clip it horizontally so it
-    // never spawns a transient page scrollbar (vertical scroll still works).
-    overflow-x: hidden;
   }
 
   // Bars + scroll body sit on the surface backdrop behind the cards.
@@ -121,6 +129,16 @@ body {
 }
 .page-enter-from,
 .page-leave-to {
+  opacity: 0;
+}
+
+// FPSMonitor AnimatedVisibility(fadeIn()/fadeOut()).
+.fps-fade-enter-active,
+.fps-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fps-fade-enter-from,
+.fps-fade-leave-to {
   opacity: 0;
 }
 </style>

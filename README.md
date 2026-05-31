@@ -88,7 +88,7 @@ decelerateEasing(1.5)
 
 ```sh
 bun install
-bun run dev # playground at http://localhost:5173
+bun run dev # example app at http://localhost:5173
 bun run build # library build to dist/
 bun run lint
 bun run format

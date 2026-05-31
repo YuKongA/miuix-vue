@@ -53,7 +53,9 @@ export { MiuixFloatingActionButton } from './components/fab'
 export { MiuixTopAppBar } from './components/top-app-bar'
 export { MiuixNavigationBar, type MiuixNavigationItem } from './components/navigation-bar'
 export { MiuixBottomSheet } from './components/bottom-sheet'
+export { MiuixScrollArea } from './components/scroll-area'
 
 export { IconArrowRight, IconArrowUpDown, IconCheck, IconSearch } from './icons'
 
-export const version = '0.0.0'
+// Replaced at build time with package.json's version (Vite `define`, see env.d.ts).
+export const version = __APP_VERSION__

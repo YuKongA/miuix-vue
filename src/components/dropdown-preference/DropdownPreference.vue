@@ -11,8 +11,15 @@
 //   fraction: spring(dampingRatio 0.82, stiffness 362.5)  → scale 0.15 + 0.85·f
 //   alpha:    tween 200ms in / 150ms out
 //   dim:      windowDimming, tween 300ms SinOut in / 150ms out
-//   transformOrigin = anchor spawn corner (End-aligned → top/bottom right)
-//   clip-reveal: visible height grows from the top (below) / bottom (above)
+//   transformOrigin = anchor spawn corner (End-aligned → top/bottom/centre right)
+//   clip-reveal: visible band grows from the top (below) / bottom (above) / centre
+//   anchor = the end-actions block (value + arrow), NOT the whole row: miuix nests
+//     the popup inside BasicComponent's endActions Row, so anchorBounds is that
+//     block. End-aligned → popup right edge = block right edge (inset by the row's
+//     16dp padding); it spawns 8dp below the block (≈ row centre), not below the row.
+//   placement = dropdownPositionProvider's 3 branches: below if it fits below, else
+//     above if it fits, else centred on the anchor; offsets coerced on-screen, with
+//     an 8dp viewport gap (vertical margin) and no horizontal margin.
 // Row: BasicComponent (title/summary) + selected value + ArrowUpDown.
 // Item (DropdownImpl): pad 20 horizontal, first/last 20 / middle 12 vertical;
 //   title body1 (16) Medium, summary body2 (14); selected → primary + Check 20.
@@ -64,8 +71,10 @@ const fractionSpec = {
 
 const open = ref(false)
 const rendered = ref(false)
-const placeBelow = ref(true)
-const triggerRef = ref<HTMLElement | null>(null)
+// Spawn side relative to the anchor (miuix dropdownPositionProvider's 3-branch choice).
+const placement = ref<'below' | 'above' | 'middle'>('below')
+const anchorRef = ref<HTMLElement | null>(null)
+const popupRef = ref<HTMLElement | null>(null)
 const popupStyle = ref<Record<string, string>>({})
 
 const fractionMv = motionValue(0)
@@ -86,46 +95,77 @@ const normalized = computed<MiuixDropdownItem[]>(() =>
 )
 const selected = computed(() => normalized.value[props.modelValue])
 
-// scale 0.15 + 0.85·fraction; clip-reveal height grows from the spawn edge.
+// scale 0.15 + 0.85·fraction; clip-reveal grows from the spawn edge (popupClipReveal):
+// below → from the top, above → from the bottom, middle → symmetric from the centre.
 const motionStyle = computed(() => {
   const f = fraction.value
   const clamped = Math.max(0, Math.min(1, f))
   const hidden = (1 - clamped) * 100
+  let clipPath: string
+  if (placement.value === 'below') clipPath = `inset(0 0 ${hidden}% 0 round 16px)`
+  else if (placement.value === 'above') clipPath = `inset(${hidden}% 0 0 0 round 16px)`
+  else clipPath = `inset(${hidden / 2}% 0 ${hidden / 2}% 0 round 16px)`
   return {
     transform: `scale(${0.15 + 0.85 * f})`,
     opacity: String(alpha.value),
-    clipPath: placeBelow.value
-      ? `inset(0 0 ${hidden}% 0 round 16px)`
-      : `inset(${hidden}% 0 0 0 round 16px)`,
+    clipPath,
   }
 })
 
 function computePosition(): void {
-  const el = triggerRef.value
-  if (!el || typeof window === 'undefined') return
-  const rect = el.getBoundingClientRect()
+  const anchor = anchorRef.value
+  const popup = popupRef.value
+  if (!anchor || !popup || typeof window === 'undefined') return
+  const rect = anchor.getBoundingClientRect()
   const vw = window.innerWidth
   const vh = window.innerHeight
-  const margin = 12
-  const right = vw - rect.right
-  const belowSpace = vh - rect.bottom - margin
-  const aboveSpace = rect.top - margin
-  const below = belowSpace >= 220 || belowSpace >= aboveSpace
-  placeBelow.value = below
-  if (below) {
+  // dropdownPositionProvider margins: PaddingValues(horizontal 0, vertical 8).
+  const margin = 8
+  // offsetHeight/offsetWidth are the natural (pre-transform) box; the popup is
+  // mounted unconstrained (popupStyle = {}) and invisible until runEnter.
+  const popupHeight = popup.offsetHeight
+  const popupWidth = popup.offsetWidth
+
+  // X — Align.End: popup right edge = anchor right edge, then coerce the left edge
+  // into [0, vw - popupWidth] so the popup never runs off either viewport edge
+  // (miuix coerceIn on offsetX; horizontal margin 0). Anchored via CSS `right`.
+  const left = Math.min(Math.max(rect.right - popupWidth, 0), Math.max(vw - popupWidth, 0))
+  const right = vw - left - popupWidth
+
+  // Y — miuix's 3 branches: below if it fits below, else above if it fits there,
+  // else centre on the anchor. Decision uses the raw gap (margin lives in the offset).
+  const spaceBelow = vh - rect.bottom
+  const spaceAbove = rect.top
+  if (spaceBelow > popupHeight) {
+    placement.value = 'below'
     popupStyle.value = {
-      // verticalMargin 8 between the anchor and the popup.
-      top: `${rect.bottom + 8}px`,
+      top: `${rect.bottom + margin}px`,
       right: `${right}px`,
-      maxHeight: `${belowSpace}px`,
+      // Keep miuix's 8dp gap at the anchor and the viewport bottom.
+      maxHeight: `${Math.max(spaceBelow - margin * 2, 0)}px`,
       transformOrigin: 'top right',
     }
-  } else {
+  } else if (spaceAbove > popupHeight) {
+    placement.value = 'above'
     popupStyle.value = {
-      bottom: `${vh - rect.top + 8}px`,
+      bottom: `${vh - rect.top + margin}px`,
       right: `${right}px`,
-      maxHeight: `${aboveSpace}px`,
+      maxHeight: `${Math.max(spaceAbove - margin * 2, 0)}px`,
       transformOrigin: 'bottom right',
+    }
+  } else {
+    // Fits neither side: centre on the anchor's midpoint, clamped on-screen.
+    placement.value = 'middle'
+    const center = rect.top + rect.height / 2
+    const top = Math.min(
+      Math.max(center - popupHeight / 2, margin),
+      Math.max(vh - popupHeight - margin, margin),
+    )
+    popupStyle.value = {
+      top: `${top}px`,
+      right: `${right}px`,
+      maxHeight: `${Math.max(vh - margin * 2, 0)}px`,
+      transformOrigin: 'right center',
     }
   }
 }
@@ -164,6 +204,9 @@ function openPopup(): void {
   if (props.disabled || open.value) return
   open.value = true
   rendered.value = true
+  // Clear last open's offsets so the freshly-mounted popup measures at its natural
+  // height (the below/above choice needs it); it stays invisible until runEnter.
+  popupStyle.value = {}
   emit('update:expanded', true)
   nextTick(() => {
     computePosition()
@@ -194,7 +237,7 @@ onUnmounted(stopAnims)
 </script>
 
 <template>
-  <div ref="triggerRef" class="m-dropdown-preference">
+  <div class="m-dropdown-preference">
     <MiuixBasicComponent
       :title="props.title"
       :summary="props.summary"
@@ -204,13 +247,15 @@ onUnmounted(stopAnims)
       @click="toggle"
     >
       <template #end>
-        <span
-          v-if="spinner && selected?.color"
-          class="m-dropdown-preference__swatch"
-          :style="{ background: selected.color }"
-        />
-        <span class="m-dropdown-preference__value">{{ selected?.text }}</span>
-        <span class="m-dropdown-preference__arrow"><IconArrowUpDown /></span>
+        <span ref="anchorRef" class="m-dropdown-preference__end">
+          <span
+            v-if="spinner && selected?.color"
+            class="m-dropdown-preference__swatch"
+            :style="{ background: selected.color }"
+          />
+          <span class="m-dropdown-preference__value">{{ selected?.text }}</span>
+          <span class="m-dropdown-preference__arrow"><IconArrowUpDown /></span>
+        </span>
       </template>
     </MiuixBasicComponent>
 
@@ -223,6 +268,7 @@ onUnmounted(stopAnims)
           @contextmenu.prevent="close"
         />
         <div
+          ref="popupRef"
           class="m-dropdown-preference__popup"
           :style="{ ...popupStyle, ...motionStyle }"
           role="listbox"
@@ -271,6 +317,13 @@ onUnmounted(stopAnims)
 
 <style lang="scss">
 .m-dropdown-preference {
+  // The popup anchor: the end-actions block (swatch? + value + arrow), matching
+  // miuix's endActions Row. Its right edge / vertical centre drive popup placement.
+  &__end {
+    display: inline-flex;
+    align-items: center;
+  }
+
   &__value {
     color: var(--m-color-on-surface-variant-actions);
     font-size: var(--m-text-body2-size);

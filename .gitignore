@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 .DS_Store
 dist
+dist-example
 dist-ssr
 coverage
 *.local
@@ -27,13 +28,6 @@ coverage
 *.tsbuildinfo
 
 .eslintcache
-
-# Cypress
-/cypress/videos/
-/cypress/screenshots/
-
-# Vitest
-__screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs

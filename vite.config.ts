@@ -5,8 +5,12 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import dts from 'vite-plugin-dts'
 
+import { buildDefines } from './vite.meta'
+
 // https://vite.dev/config/
 export default defineConfig({
+  // Version / git-hash defines, shared with the example-site build (vite.meta.ts).
+  define: buildDefines(),
   plugins: [
     vue(),
     vueDevTools(),
