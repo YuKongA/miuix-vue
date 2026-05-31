@@ -200,6 +200,11 @@ onUnmounted(clearPressTimer)
 
 .m-card {
   position: relative;
+  // Mobile webkit (Android Chrome / iOS Safari) paints a tap highlight that
+  // ignores border-radius — a tap would flash a right-angle block over the
+  // rounded card. Kill it; the press feedback / indication overlay is the
+  // intended visual. (No effect on desktop, which has no tap highlight.)
+  -webkit-tap-highlight-color: transparent;
   // miuix Card content is a ColumnScope — children stack vertically.
   display: flex;
   flex-direction: column;

@@ -69,6 +69,9 @@ function onClick(event: MouseEvent): void {
   &--clickable {
     cursor: pointer;
     outline: none;
+    // Suppress mobile webkit's tap highlight (a square block that ignores
+    // border-radius); the ::after indication overlay is the intended visual.
+    -webkit-tap-highlight-color: transparent;
 
     &::after {
       content: '';

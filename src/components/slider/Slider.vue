@@ -465,6 +465,9 @@ function onPointerLeave(): void {
   user-select: none;
   touch-action: none;
   outline: none;
+  // Suppress mobile webkit's tap highlight (a square block that ignores the pill
+  // radius) — the thumb scale / track overlay is the intended press visual.
+  -webkit-tap-highlight-color: transparent;
   overflow: hidden;
   border-radius: 9999px;
 
