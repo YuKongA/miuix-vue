@@ -133,11 +133,15 @@ function toggle(name: string): void {
     transition: opacity 120ms linear;
     pointer-events: none;
   }
-  &:hover::after {
-    opacity: 0.06;
-  }
   &:active::after {
     opacity: 0.1;
+  }
+
+  // Hover only on real pointers; on touch :hover sticks after a tap.
+  @media (hover: hover) {
+    &:hover::after {
+      opacity: 0.06;
+    }
   }
 
   &__main {

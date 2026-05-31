@@ -231,26 +231,30 @@ onUnmounted(clearPressTimer)
     transition: opacity 120ms linear;
     pointer-events: none;
   }
-  &--indication:hover::after {
-    opacity: 0.06;
-  }
   &--indication:focus-visible::after {
     opacity: 0.08;
-  }
-  &--indication:hover:focus-visible::after {
-    opacity: 0.14;
   }
   &--indication:active::after {
     opacity: 0.1;
   }
-  &--indication:hover:active::after {
-    opacity: 0.16;
-  }
   &--indication:focus-visible:active::after {
     opacity: 0.18;
   }
-  &--indication:hover:focus-visible:active::after {
-    opacity: 0.24;
+
+  // Hover only on real pointers; on touch :hover sticks after a tap.
+  @media (hover: hover) {
+    &--indication:hover::after {
+      opacity: 0.06;
+    }
+    &--indication:hover:focus-visible::after {
+      opacity: 0.14;
+    }
+    &--indication:hover:active::after {
+      opacity: 0.16;
+    }
+    &--indication:hover:focus-visible:active::after {
+      opacity: 0.24;
+    }
   }
 }
 </style>

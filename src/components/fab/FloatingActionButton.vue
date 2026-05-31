@@ -72,26 +72,30 @@ function onClick(event: MouseEvent): void {
     transition: opacity 120ms linear;
     pointer-events: none;
   }
-  &:hover::after {
-    opacity: 0.06;
-  }
   &:focus-visible::after {
     opacity: 0.08;
-  }
-  &:hover:focus-visible::after {
-    opacity: 0.14;
   }
   &:active::after {
     opacity: 0.1;
   }
-  &:hover:active::after {
-    opacity: 0.16;
-  }
   &:focus-visible:active::after {
     opacity: 0.18;
   }
-  &:hover:focus-visible:active::after {
-    opacity: 0.24;
+
+  // Hover only on real pointers; on touch :hover sticks after a tap.
+  @media (hover: hover) {
+    &:hover::after {
+      opacity: 0.06;
+    }
+    &:hover:focus-visible::after {
+      opacity: 0.14;
+    }
+    &:hover:active::after {
+      opacity: 0.16;
+    }
+    &:hover:focus-visible:active::after {
+      opacity: 0.24;
+    }
   }
 
   &--disabled {
