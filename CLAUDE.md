@@ -69,7 +69,7 @@ Slider 磁吸阈值默认 **0.02**（值域的 2%）。
 | Dialog    | 大屏 maxH = windowH × 2/3，小屏 back 手势 scale = 1 - back × 0.2              |
 
 > **Card tilt 的 cameraDistance**：`12 × density` 是 Compose 的相机矩阵参数，与 CSS `perspective`（视点距离）不是同一套单位、无法 1:1 复刻（12px 视点会让卡片穿过相机而塌陷）。web 改用与卡片宽度成比例的 perspective（`rect.width × TILT_PERSPECTIVE_FACTOR`，默认 1.6，相机点取按下的支点角，见 `Card.vue`），倾斜角仍固定 ±8°。这是铁律 #1 下唯一因单位不可映射而做的近似。
-> **弹窗形态**：web 只实现「居中（大屏）」一种弹窗（Dialog / BottomSheet），不复刻 super / window / 小屏 back 手势变体（POC 目标：一种弹窗样式）。
+> **弹窗形态**：Dialog 复刻 miuix 的 `isLargeScreen()` 判断（`windowH ≥ 480 && windowW ≥ 840`，1dp=1px）：大屏居中 + 缩放进场，小屏（手机 / 矮窗口）置底 + 上滑进场（`folmeSpring(0.88, 450)`）。不复刻 super / window 变体与小屏 back 手势（scale / 下拉）。BottomSheet 仍只做置底一种形态。
 
 ## 4 个自定义缓动曲线
 
