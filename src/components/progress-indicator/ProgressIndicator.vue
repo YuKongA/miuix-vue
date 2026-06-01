@@ -54,11 +54,12 @@ const linearFillWidth = computed(
 const circSize = computed(() => props.size ?? CIRC_SIZE)
 const circStroke = computed(() => props.strokeWidth ?? CIRC_STROKE)
 const circR = computed(() => (circSize.value - circStroke.value) / 2)
-const circC = computed(() => 2 * Math.PI * circR.value)
+// pathLength="360" on the arc remaps dash units so 1 unit == 1°; dasharray is
+// authored in degrees with no var()/calc(). (var() in @keyframes values forces
+// discrete interpolation, which made the indeterminate sweep snap, not breathe.)
 const circDeterminateDash = computed(() => {
   const sweep = 0.1 + (360 - 0.1) * clamped.value
-  const visible = (sweep / 360) * circC.value
-  return `${visible} ${circC.value - visible}`
+  return `${sweep} ${360 - sweep}`
 })
 
 // ---- infinite ----
@@ -113,11 +114,12 @@ const infColor = computed(() => props.color ?? '#888888')
       fill="none"
       :stroke-width="circStroke"
       stroke-linecap="round"
+      pathLength="360"
       :stroke-dasharray="isIndeterminate ? undefined : circDeterminateDash"
       :style="
         isIndeterminate
-          ? { '--m-circ-circumference': circC }
-          : { transform: 'rotate(-90deg)', transformOrigin: 'center' }
+          ? undefined
+          : { transform: 'rotate(-90deg)', transformOrigin: 'center', transformBox: 'view-box' }
       "
     />
   </svg>
@@ -140,7 +142,7 @@ const infColor = computed(() => props.color ?? '#888888')
       :stroke-width="infStroke"
       stroke-linecap="round"
     />
-    <g class="m-progress__inf-orbit" :style="{ transformOrigin: 'center' }">
+    <g class="m-progress__inf-orbit">
       <circle :cx="infSize / 2 + infOrbitR" :cy="infSize / 2" :r="INF_DOT" :fill="infColor" />
     </g>
   </svg>
@@ -193,12 +195,15 @@ const infColor = computed(() => props.color ?? '#888888')
 
   &--circular-indet .m-progress__circ-fg {
     transform-origin: center;
+    transform-box: view-box;
     animation:
       m-progress-circ-rotate 1000ms linear infinite,
       m-progress-circ-sweep 1600ms linear infinite;
   }
 
   &__inf-orbit {
+    transform-origin: center;
+    transform-box: view-box;
     animation: m-progress-inf-rotate 800ms linear infinite;
   }
 }
@@ -233,18 +238,16 @@ const infColor = computed(() => props.color ?? '#888888')
 }
 
 @keyframes m-progress-circ-sweep {
-  // sweep 30° → 120° → 30°; dasharray relative to circumference.
+  // sweep 30° → 120° → 30°; pathLength=360 makes 1 dash unit == 1°, so values are
+  // plain numbers — no var()/calc(), which would force discrete (snapping) interpolation.
   0% {
-    stroke-dasharray: calc(var(--m-circ-circumference) * 30 / 360)
-      calc(var(--m-circ-circumference) * 330 / 360);
+    stroke-dasharray: 30 330;
   }
   50% {
-    stroke-dasharray: calc(var(--m-circ-circumference) * 120 / 360)
-      calc(var(--m-circ-circumference) * 240 / 360);
+    stroke-dasharray: 120 240;
   }
   100% {
-    stroke-dasharray: calc(var(--m-circ-circumference) * 30 / 360)
-      calc(var(--m-circ-circumference) * 330 / 360);
+    stroke-dasharray: 30 330;
   }
 }
 
