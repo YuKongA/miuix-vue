@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // miuix-vue example app
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
   MiuixIcon,
   MiuixIconButton,
@@ -55,6 +55,30 @@ watch(
 function onPageEnter(): void {
   scrollerRef.value?.setScrollTop(scrollPositions.get(navIndex.value) ?? 0)
 }
+
+// The SnackbarHost teleports to <body> and floats above the bottom navigation
+// bar (matching miuix's Scaffold). Publish the bar's measured height as
+// --m-snackbar-inset-bottom on the document root so the host clears it.
+const bottomBarRef = ref<HTMLElement | null>(null)
+let barObserver: ResizeObserver | null = null
+
+function syncSnackbarInset(): void {
+  const h = bottomBarRef.value?.offsetHeight ?? 0
+  document.documentElement.style.setProperty('--m-snackbar-inset-bottom', `${h}px`)
+}
+
+onMounted(() => {
+  if (bottomBarRef.value) {
+    barObserver = new ResizeObserver(syncSnackbarInset)
+    barObserver.observe(bottomBarRef.value)
+  }
+  syncSnackbarInset()
+})
+
+onBeforeUnmount(() => {
+  barObserver?.disconnect()
+  document.documentElement.style.removeProperty('--m-snackbar-inset-bottom')
+})
 </script>
 
 <template>
@@ -77,7 +101,7 @@ function onPageEnter(): void {
       </Transition>
     </MiuixScrollArea>
 
-    <div class="app__bottom">
+    <div ref="bottomBarRef" class="app__bottom">
       <MiuixNavigationBar v-model="navIndex" :items="navItems">
         <template #icon="{ index }">
           <MiuixIcon :icon="navIcons[index]" :size="26" />

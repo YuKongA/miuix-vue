@@ -5,43 +5,51 @@
 // Ported from miuix-ui/.../basic/Snackbar.kt (SnackbarHost + Snackbar).
 //
 // Bottom-centered queue, newest nearest the bottom. Each snackbar:
-//   container surfaceContainerHighest, radius 12, min-height 44, inside margin
-//   12×8, outer margin 12×4; message body2 (max 2 lines); optional action label
-//   (transparent text button, onSurfaceContainerHighest) + dismiss X.
-// Enter: slide-up + fade; exit: slide-down + fade. Auto-dismiss timing lives in
-// the store (Short 4000 / Long 10000 / Indefinite).
+//   dark container (onSecondaryVariant), radius 16, min-height 48, inside margin
+//   12 all, outer padding 12 horizontal + 8 top; soft drop shadow (blur 10,
+//   black 10%); message body2 (max 2 lines, contentColor = secondaryVariant);
+//   optional action = primary filled pill (primary bg, onPrimary text, radius 50,
+//   font 15) + dismiss X (Close icon, 20px, onSurfaceContainerVariant, no ripple).
+// Enter: slide-up + fade; exit: slide-down + fade; dismissing one slides the
+// rest into place. Auto-dismiss timing lives in the store (Short 4000 / Long
+// 10000 / Indefinite).
 
 import { AnimatePresence, Motion } from 'motion-v'
 import { computed } from 'vue'
+import { folmeSpring } from '../../anim'
 import { MiuixText } from '../text'
 import { snackbarStore, dismissSnackbar } from './useSnackbar'
 
 defineOptions({ name: 'MiuixSnackbarHost' })
 
 // Only visible entries are rendered; AnimatePresence plays the exit animation
-// when one leaves this list. Oldest→newest top-to-bottom (newest at the bottom).
+// when one leaves this list. Oldest→newest top-to-bottom (newest at the bottom);
+// the bottom-pinned host keeps the newest anchored as the stack grows/shrinks.
 const ordered = computed(() => snackbarStore.entries.filter((e) => e.visible).reverse())
 
-// miuix enter (slideInVertically + fadeIn) and exit (slideOut + fadeOut +
-// shrinkVertically) default to spring(dampingRatio=1, stiffness=MediumLow=400) —
-// critically damped. damping = 2*1*sqrt(400) = 40.
-const enterTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
-const exitTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
+// One critically-damped spring drives everything: miuix's enter
+// (slideInVertically + fadeIn), exit (slideOutVertically + fadeOut +
+// shrinkVertically) and the LazyColumn animateItem placement all default to
+// spring(dampingRatio=1, stiffness=MediumLow=400). `layout="position"` +
+// AnimatePresence `popLayout` reproduce shrinkVertically + animateItem: a
+// dismissed snackbar pops out of flow and the rest slide into place on the same
+// spring, instead of the others jumping once it unmounts.
+const spring = folmeSpring(1, 400)
 </script>
 
 <template>
   <Teleport to="body">
     <div class="m-snackbar-host">
-      <AnimatePresence :initial="false">
+      <AnimatePresence :initial="false" mode="popLayout">
         <Motion
           v-for="entry in ordered"
           :key="entry.id"
           class="m-snackbar"
+          layout="position"
           :initial="{ opacity: 0, y: '100%' }"
           :animate="{ opacity: 1, y: '0%' }"
           :exit="{ opacity: 0, y: '100%' }"
-          :transition="enterTransition"
-          :exit-transition="exitTransition"
+          :transition="spring"
         >
           <div class="m-snackbar__inner">
             <MiuixText type="body2" class="m-snackbar__message">{{ entry.message }}</MiuixText>
@@ -60,11 +68,11 @@ const exitTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
               aria-label="Dismiss"
               @click="dismissSnackbar(entry.id, 'dismissed')"
             >
-              <svg viewBox="0 0 24 24" width="24" height="24">
+              <svg viewBox="0 0 24 24" width="20" height="20">
                 <path
                   d="M6 6 L18 18 M18 6 L6 18"
                   stroke="currentColor"
-                  stroke-width="2"
+                  stroke-width="2.2"
                   stroke-linecap="round"
                   fill="none"
                 />
@@ -82,7 +90,11 @@ const exitTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  // Float above any bottom bar (miuix Scaffold places the snackbar on top of the
+  // bottomBar). Apps with a bottom navigation bar set --m-snackbar-inset-bottom
+  // to its height; default 0 sits the host at the viewport bottom. The 12px gap
+  // (LazyColumn contentPadding) is measured from this inset.
+  bottom: var(--m-snackbar-inset-bottom, 0px);
   z-index: 1200;
   display: flex;
   flex-direction: column;
@@ -94,26 +106,26 @@ const exitTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
 .m-snackbar {
   width: 100%;
   max-width: 420px;
-  // outer margin 12 horizontal, 4 vertical
-  padding: 4px 12px;
+  // outer padding: 12 horizontal, 8 top, 0 bottom (SnackbarDefaults.OuterPadding)
+  padding: 8px 12px 0;
   box-sizing: border-box;
   pointer-events: auto;
 
   &__inner {
     display: flex;
     align-items: center;
-    // border-box so min-height 44 INCLUDES the inside padding, matching miuix's
-    // defaultMinSize(44).padding(insideMargin) — content-box would make it 44+16
-    // = 60 tall. (No global box-sizing reset in this project.)
+    // border-box so min-height 48 INCLUDES the inside padding, matching miuix's
+    // defaultMinSize(48).padding(insideMargin) — content-box would make it 48+24
+    // = 72 tall. (No global box-sizing reset in this project.)
     box-sizing: border-box;
-    min-height: 44px;
-    // inside margin 12 horizontal, 8 vertical
-    padding: 8px 12px;
-    border-radius: 12px;
-    background: var(--m-color-surface-container-highest);
-    color: var(--m-color-on-surface-container);
-    // dropShadow(radius 1, spread 0.6, dividerLine, offset 0,1).
-    box-shadow: 0 1px 1px 0.6px var(--m-color-divider-line);
+    min-height: 48px;
+    // inside margin 12 all (SnackbarDefaults.InsideMargin)
+    padding: 12px;
+    border-radius: var(--m-radius-md);
+    background: var(--m-color-on-secondary-variant);
+    color: var(--m-color-secondary-variant);
+    // dropShadow(radius 10, black, alpha 0.1) — soft centered blur, no offset.
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   }
 
   &__message {
@@ -126,34 +138,83 @@ const exitTransition = { type: 'spring' as const, stiffness: 400, damping: 40 }
     overflow: hidden;
   }
 
+  // Action label = primary filled pill (textButtonColorsPrimary): primary bg,
+  // onPrimary text, pill radius 50, min 26×26, inside margin 12×0, font 15.
   &__action {
+    position: relative;
     flex: none;
-    margin-left: 8px;
-    padding: 6px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 26px;
+    min-height: 26px;
+    // padding(start = 12) before the pill
+    margin-left: 12px;
+    // ActionInsideMargin: 12 horizontal, 0 vertical
+    padding: 0 12px;
     border: 0;
-    // TextButton uses ButtonDefaults corner radius (16).
-    border-radius: 16px;
-    background: transparent;
-    color: var(--m-color-on-surface-container-highest);
+    border-radius: 50px;
+    background: var(--m-color-primary);
+    color: var(--m-color-on-primary);
     font-family: inherit;
-    font-size: var(--m-text-button-size);
+    font-size: 15px;
+    line-height: 1;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    // MiuixIndication alpha overlay (additive, linear 120ms) — same as MiuixButton.
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: var(--m-color-on-background);
+      opacity: 0;
+      transition: opacity 120ms linear;
+      pointer-events: none;
+    }
+    &:focus-visible::after {
+      opacity: 0.08;
+    }
+    &:active::after {
+      opacity: 0.1;
+    }
+    &:focus-visible:active::after {
+      opacity: 0.18;
+    }
+    @media (hover: hover) {
+      &:hover::after {
+        opacity: 0.06;
+      }
+      &:hover:focus-visible::after {
+        opacity: 0.14;
+      }
+      &:hover:active::after {
+        opacity: 0.16;
+      }
+      &:hover:focus-visible:active::after {
+        opacity: 0.24;
+      }
+    }
   }
 
+  // Dismiss X (Close icon): size 20, onSurfaceContainerVariant, no background,
+  // no ripple (clickable indication = null in source).
   &__dismiss {
     flex: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     margin-left: 8px;
     padding: 0;
     border: 0;
-    border-radius: 50%;
     background: transparent;
-    color: var(--m-color-on-surface-container-highest);
+    color: var(--m-color-on-surface-container-variant);
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 </style>

@@ -124,7 +124,10 @@ function onSubmitClick(): void {
 const actionText = ref('Action')
 async function snackbarAction(): Promise<void> {
   actionText.value = 'Action: Alive'
-  const result = await showSnackbar({ message: 'This message has an action', actionLabel: 'Undo' })
+  const result = await showSnackbar({
+    message: 'This message has an action button.',
+    actionLabel: 'Undo',
+  })
   actionText.value = result === 'action' ? 'Action: Undo' : 'Action: Expired'
 }
 
@@ -418,14 +421,16 @@ const pickedColor = ref('rgb(52, 130, 255)')
           <MiuixButton class="ex-grow" @click="dismissNewestSnackbar()">Dismiss newest</MiuixButton>
         </div>
         <div class="ex-btn-row">
-          <MiuixButton class="ex-grow" @click="showSnackbar({ message: 'This is a short message' })"
+          <MiuixButton
+            class="ex-grow"
+            @click="showSnackbar({ message: 'This message stays for 4 seconds.' })"
             >Short (4s)</MiuixButton
           >
           <MiuixButton
             class="ex-grow"
             @click="
               showSnackbar({
-                message: 'This is a long message to display more text content',
+                message: 'This is a longer message that stays for 10 seconds.',
                 duration: 'long',
               })
             "
@@ -436,7 +441,10 @@ const pickedColor = ref('rgb(52, 130, 255)')
           <MiuixButton
             class="ex-grow"
             @click="
-              showSnackbar({ message: 'This message will last for 2 seconds', duration: 2000 })
+              showSnackbar({
+                message: 'This message uses a custom 2-second duration.',
+                duration: 2000,
+              })
             "
             >Custom (2s)</MiuixButton
           >
@@ -449,7 +457,7 @@ const pickedColor = ref('rgb(52, 130, 255)')
             class="ex-grow"
             @click="
               showSnackbar({
-                message: 'This message can be removed via the close button',
+                message: 'Tap the close button to dismiss this message.',
                 withDismissAction: true,
                 duration: 'long',
               })
@@ -460,12 +468,26 @@ const pickedColor = ref('rgb(52, 130, 255)')
             class="ex-grow"
             @click="
               showSnackbar({
-                message: 'Indefinite message, dismiss manually',
+                message: 'This message stays until you dismiss it manually.',
                 withDismissAction: true,
                 duration: 'indefinite',
               })
             "
             >Indefinite</MiuixButton
+          >
+        </div>
+        <div class="ex-btn-row">
+          <MiuixButton
+            class="ex-grow"
+            @click="
+              showSnackbar({
+                message: 'This message has both an action and a close button.',
+                actionLabel: 'Undo',
+                withDismissAction: true,
+                duration: 'long',
+              })
+            "
+            >Action + Close</MiuixButton
           >
         </div>
       </div>
@@ -813,9 +835,9 @@ const pickedColor = ref('rgb(52, 130, 255)')
 }
 
 .ex-snackbar-col {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  // Row spacing comes from .ex-btn-row's `& + &` margin-top (12); don't add a
+  // flex `gap` too or rows end up 24 apart while the horizontal gap / edge
+  // padding stay 12. miuix: Column(spacedBy(12)).padding(12), rows spacedBy(12).
   padding: 12px;
 }
 
