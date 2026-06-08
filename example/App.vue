@@ -25,6 +25,15 @@ function toggleTheme(): void {
   setTheme(theme.value === 'light' ? 'dark' : 'light')
 }
 
+// AdaptiveTopAppBar: wide screens get the pinned bar, narrow ones the collapsing
+// large-title bar — 1:1 with miuix `shouldShowSplitPane()` (1dp = 1px @ 1x DPR).
+const isWide = ref(false)
+function computeIsWide(): void {
+  const w = window.innerWidth
+  const h = window.innerHeight
+  isWide.value = w >= 840 || (w >= 600 && h / w < 1.2)
+}
+
 const pages = [MainPage, IconPage, ColorPage, TextStylePage, SettingsPage]
 const titles = ['Home', 'Icon', 'Color', 'TextStyle', 'Settings']
 const navItems: MiuixNavigationItem[] = titles.map((label) => ({ label }))
@@ -68,6 +77,8 @@ function syncSnackbarInset(): void {
 }
 
 onMounted(() => {
+  computeIsWide()
+  window.addEventListener('resize', computeIsWide)
   if (bottomBarRef.value) {
     barObserver = new ResizeObserver(syncSnackbarInset)
     barObserver.observe(bottomBarRef.value)
@@ -76,6 +87,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', computeIsWide)
   barObserver?.disconnect()
   document.documentElement.style.removeProperty('--m-snackbar-inset-bottom')
 })
@@ -83,17 +95,18 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="app">
-    <div class="app__top">
-      <MiuixTopAppBar :title="activeTitle" class="app__bar">
+    <!-- The TopAppBar is the screen's top bar (miuix Scaffold topBar), the first
+         child of the page scroll: wide → pinned, narrow → collapsing large title
+         that scrolls away while the small centred title cross-fades into the bar. -->
+    <MiuixScrollArea ref="scrollerRef" class="app__body">
+      <MiuixTopAppBar :large="!isWide" :title="activeTitle">
         <template #actions>
           <MiuixIconButton aria-label="Toggle theme" @click="toggleTheme">
             <MiuixIcon :icon="Theme" :size="24" />
           </MiuixIconButton>
         </template>
       </MiuixTopAppBar>
-    </div>
 
-    <MiuixScrollArea ref="scrollerRef" class="app__body">
       <Transition name="page" mode="out-in" @enter="onPageEnter">
         <KeepAlive>
           <component :is="activePage" :key="navIndex" />
@@ -146,7 +159,6 @@ body {
   min-height: 0;
   background: var(--m-color-surface);
 
-  &__top,
   &__bottom {
     flex: none;
     z-index: 10;
@@ -158,11 +170,14 @@ body {
   &__body {
     flex: 1;
     min-height: 0;
+    // Keep the scroll thumb below the pinned 52 TopAppBar row (the bar is a child
+    // of this scroll), so it stays grabbable — miuix overlays the scrollbar on
+    // content only, never the bar.
+    --m-scroll-area-inset-top: 52px;
   }
 
   // Bars + scroll body sit on the surface backdrop behind the cards.
   &__body,
-  &__bar,
   .m-navigation-bar {
     background: var(--m-color-surface);
   }

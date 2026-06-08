@@ -50,7 +50,8 @@ scripts/                # generate-extended-icons.mjs（生成扩展图标包）
 
 > ColorSlider 是 ColorPicker 的内部子组件，不单独导出。
 > **命令式 API**：主题 `setTheme` / `setThemeMode` / `useTheme`；动画 `folmeSpring` / `folmeSpringByResponse` / `accelerateEasing` / `decelerateEasing` / `sinOutEasing`；Snackbar `showSnackbar` / `dismissSnackbar` / `dismissNewestSnackbar` / `dismissOldestSnackbar`；基础图标 `IconArrowRight` / `IconArrowUpDown` / `IconCheck` / `IconSearch`；`version`。
-> **未做**：FloatingToolbar、FloatingNavigationBar、NavigationRail、横向 ScrollBar、PullToRefresh、ListPopup 顶栏菜单、OkLab / OkHSV 取色器、TopAppBar 滚动折叠。
+> **TopAppBar 两形态**：`large` 关闭 = 钉死的 SmallTopAppBar（固定 52 条，作 App chrome）；`large` 开启 = 原 `TopAppBar` 的滚动折叠大标题（大标题随内容上滑前 1/3 淡出、小标题 folmeSpring 淡入、settle 回弹 `spring(2500)`）。折叠版须置于滚动容器内首位，靠原生 scrollTop 驱动（同 ScrollArea 对 nested-scroll 的平台映射）。
+> **未做**：FloatingToolbar、FloatingNavigationBar、NavigationRail、横向 ScrollBar、PullToRefresh、ListPopup 顶栏菜单、OkLab / OkHSV 取色器。
 
 ## 常用命令
 
