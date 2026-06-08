@@ -19,6 +19,9 @@
 //   thumb colour = onSurface; effective alpha = thumbAlpha · visibility (nested
 //     opacities multiply: __bar carries visibility, __thumb carries thumbAlpha).
 //   Track is not drawn (miuix trackColor defaults to Unspecified / hidden).
+//   Track insets: --m-scroll-area-inset-top / -bottom keep the thumb clear of
+//     pinned chrome placed inside the scroll (e.g. a sticky TopAppBar row), so it
+//     stays grabbable — miuix draws the scrollbar over content only.
 
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { animate, motionValue } from 'motion-v'
@@ -58,13 +61,26 @@ const thumbStyle = computed(() => ({
   transform: `translateY(${thumbTop.value}px)`,
 }))
 
+// Track insets (px) from --m-scroll-area-inset-top/-bottom, so the thumb can be
+// kept clear of pinned chrome inside the scroll (e.g. a sticky TopAppBar row).
+// Cached — only re-read on mount / resize, never per scroll.
+let insetTop = 0
+let insetBottom = 0
+function readInsets(): void {
+  const root = rootRef.value
+  if (!root) return
+  const cs = getComputedStyle(root)
+  insetTop = parseFloat(cs.getPropertyValue('--m-scroll-area-inset-top')) || 0
+  insetBottom = parseFloat(cs.getPropertyValue('--m-scroll-area-inset-bottom')) || 0
+}
+
 function recompute(): void {
   const vp = viewportRef.value
   if (!vp) return
   const { scrollTop, clientHeight, scrollHeight } = vp
-  // trackSize = the viewport height (no track padding: the app's bars sit outside
-  // the scroll area, unlike miuix's in-LazyColumn contentPadding).
-  const track = clientHeight
+  // trackSize = the viewport height minus any inset, so the thumb clears pinned
+  // chrome inside the scroll (e.g. a sticky TopAppBar) instead of hiding under it.
+  const track = clientHeight - insetTop - insetBottom
   const overflowing = scrollHeight - clientHeight > 1
   hasOverflow.value = overflowing
   if (!overflowing) return
@@ -140,7 +156,7 @@ function onThumbMove(e: PointerEvent): void {
   if (!isDragging.value) return
   const vp = viewportRef.value
   if (!vp) return
-  const maxThumb = vp.clientHeight - thumbHeight.value
+  const maxThumb = vp.clientHeight - insetTop - insetBottom - thumbHeight.value
   if (maxThumb <= 0) return
   const maxScroll = vp.scrollHeight - vp.clientHeight
   // Map thumb travel → content scroll: dragging the full thumb range scrolls the
@@ -158,9 +174,13 @@ function onThumbUp(e: PointerEvent): void {
 let ro: ResizeObserver | null = null
 
 onMounted(() => {
+  readInsets()
   recompute()
   if (typeof ResizeObserver !== 'undefined') {
-    ro = new ResizeObserver(() => recompute())
+    ro = new ResizeObserver(() => {
+      readInsets()
+      recompute()
+    })
     if (viewportRef.value) ro.observe(viewportRef.value)
     if (contentRef.value) ro.observe(contentRef.value)
   }
@@ -234,7 +254,12 @@ defineExpose({
   // the overlay stays clickable; only the thumb opts back in.
   &__bar {
     position: absolute;
-    inset: 0;
+    // Inset from the viewport edges so the thumb clears pinned chrome inside the
+    // scroll (e.g. a sticky TopAppBar). Defaults to 0 (full height).
+    top: var(--m-scroll-area-inset-top, 0px);
+    right: 0;
+    bottom: var(--m-scroll-area-inset-bottom, 0px);
+    left: 0;
     pointer-events: none;
     z-index: 1;
   }
