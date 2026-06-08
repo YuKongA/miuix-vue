@@ -155,8 +155,7 @@ function onUp(): void {
     @pointerleave="onUp"
     @pointercancel="onUp"
     @click="toggle"
-    @keydown.space.prevent="toggle"
-    @keydown.enter.prevent="toggle"
+    @keydown.space.enter.prevent="toggle"
   >
     <span class="m-checkbox__bg" :style="{ background: bgColor }" />
     <svg class="m-checkbox__mark" viewBox="0 0 26 26" :style="markStyle">

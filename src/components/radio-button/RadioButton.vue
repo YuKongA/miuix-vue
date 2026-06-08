@@ -75,8 +75,7 @@ function onUp(): void {
     @pointerleave="onUp"
     @pointercancel="onUp"
     @click="select"
-    @keydown.space.prevent="select"
-    @keydown.enter.prevent="select"
+    @keydown.space.enter.prevent="select"
   >
     <svg
       class="m-radio__mark"

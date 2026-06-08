@@ -155,8 +155,7 @@ function onPointerLeave(): void {
     @pointercancel="onPointerCancel"
     @pointerenter="onPointerEnter"
     @pointerleave="onPointerLeave"
-    @keydown.space.prevent="toggle"
-    @keydown.enter.prevent="toggle"
+    @keydown.space.enter.prevent="toggle"
   >
     <Motion
       class="m-switch__thumb"
