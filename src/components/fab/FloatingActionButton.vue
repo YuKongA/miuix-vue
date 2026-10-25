@@ -6,7 +6,7 @@
 //
 // 60×60 circle, containerColor = primary, shadow elevation 4, centered content.
 // Wraps the clickable Surface, so it carries the MiuixIndication overlay
-// (onBackground; additive hover .06 / focus .08 / press .10). Per CLAUDE.md
+// (onBackground; additive hover .06 / focus .08 / press .10). Per AGENTS.md
 // rule #2, size/shape/color are fixed CSS / CSS-variable customization points,
 // not per-instance props.
 

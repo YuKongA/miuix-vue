@@ -8,7 +8,7 @@
 // that palette regardless of which theme the app is currently in.
 //
 // (miuix's page also shows "Dynamic Light/Dark"; dynamic color is out of scope
-// for this port — see CLAUDE.md "仅 Light / Dark 两套" — so those are omitted.)
+// for this port — see AGENTS.md "仅 Light / Dark 两套" — so those are omitted.)
 import { computed } from 'vue'
 import { MiuixCard, MiuixSmallTitle, MiuixText, useTheme } from '@/index'
 

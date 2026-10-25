@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // Ported from miuix-ui/.../basic/TabRow.kt (TabRow + TabRowWithContour, unified
-// via `contour` per CLAUDE.md rule #2).
+// via `contour` per AGENTS.md rule #2).
 //
 // Defaults (TabRowDefaults):
 //   TabRow:        height 42, radius 12, tab min 76 / max 98, spacing 9, text body1 (16)

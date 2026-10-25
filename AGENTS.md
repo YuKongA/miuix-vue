@@ -37,8 +37,9 @@ example/                # 多页 demo：App.vue + pages/*.vue + components/FpsMo
 scripts/                # generate-extended-icons.mjs（生成扩展图标包）
 ```
 
-- **两个构建入口**：`miuix-vue`（核心，~88KB，不含图标数据）+ `miuix-vue/icons`（扩展包，~1.3MB，按需引）。
+- **两个构建入口**：`miuix-vue`（核心，~91KB，不含图标数据）+ `miuix-vue/icons`（扩展包，~1.3MB，按需引）。
 - 每个组件目录一律 `Component.vue` + `index.ts`；新增组件后到 `src/index.ts` 补出口。
+- **声明文件输出到 `dist/` 根**（`unplugin-dts` 1.1.x）：`dist/index.d.ts`、`dist/icons/extended/index.d.ts` 等，`package.json` 的 `types` / `exports.*.types` 必须与之一致。注意扩展图标**打包入口名为 `extended-icons`**：若叫 `icons`，`dist/icons.js` 会遮蔽 `dist/icons/index.d.ts`，导致根 `dist/index.d.ts` 的 `./icons` 解析失败（TS7016）。改 dts 配置、bundle 入口名或升级 `unplugin-dts` 后必须打包验证（见「常用命令」）。
 
 ## 组件清单（33 个公开组件，均已实现 + 构建通过）
 
@@ -51,7 +52,8 @@ scripts/                # generate-extended-icons.mjs（生成扩展图标包）
 > ColorSlider 是 ColorPicker 的内部子组件，不单独导出。
 > **命令式 API**：主题 `setTheme` / `setThemeMode` / `useTheme`；动画 `folmeSpring` / `folmeSpringByResponse` / `accelerateEasing` / `decelerateEasing` / `sinOutEasing`；Snackbar `showSnackbar` / `dismissSnackbar` / `dismissNewestSnackbar` / `dismissOldestSnackbar`；基础图标 `IconArrowRight` / `IconArrowUpDown` / `IconCheck` / `IconSearch`；`version`。
 > **TopAppBar 两形态**：`large` 关闭 = 钉死的 SmallTopAppBar（固定 52 条，作 App chrome）；`large` 开启 = 原 `TopAppBar` 的滚动折叠大标题（大标题随内容上滑前 1/3 淡出、小标题 folmeSpring 淡入、settle 回弹 `spring(2500)`）。折叠版须置于滚动容器内首位，靠原生 scrollTop 驱动（同 ScrollArea 对 nested-scroll 的平台映射）。
-> **未做**：FloatingToolbar、FloatingNavigationBar、NavigationRail、横向 ScrollBar、PullToRefresh、ListPopup 顶栏菜单、OkLab / OkHSV 取色器。
+> **未做**：FloatingToolbar、FloatingNavigationBar、NavigationRail、横向 ScrollBar、PullToRefresh、ListPopup 顶栏菜单、ColorPalette、基础 Dropdown、TextButton、Badge / BadgedBox、Tooltip、BreadcrumbBar、SliderPreference、OkLab / OkHSV / OkLch 取色器（当前仅 HSV）。
+> **上游基线**：miuix v0.9.4（2026-09-20）。`miuix-squircle` / `miuix-shader` / `miuix-blur` / `miuix-glass` / `miuix-nav` 尚未涉及；`miuix-window`（桌面窗口）不适用 Web。
 
 ## 常用命令
 
@@ -67,6 +69,7 @@ bun scripts/generate-extended-icons.mjs    # 改图标包后重新生成
 ```
 
 > 提交前必跑 `bun run format && bun run lint`（见文末「提交信息」）。
+> 发版前必跑 `bun run build && bun pm pack`，解包确认 `package/dist/index.d.ts` 与 `package/dist/icons/extended/index.d.ts` 存在。类型入口曾因 dts 输出目录漂移而指向不存在的文件（npm 0.1.1 即受影响）。
 
 ## 动画（spring / 缓动）
 
@@ -124,17 +127,18 @@ bun scripts/generate-extended-icons.mjs    # 改图标包后重新生成
 ## 图标
 
 - **基础图标**（ArrowRight / ArrowUpDown / Check / Search）逐字抄自 `icon/basic/*.kt`，作为函数式组件放 `src/icons/index.ts`，供组件内部用。
-- **扩展图标包** = miuix `miuix-icons` 全集（155 icon × 5 weight = 775）。由 `scripts/generate-extended-icons.mjs` 从兄弟仓库 SVG（`../miuix/docs/public/icons/extended`）生成到 `src/icons/extended/icons.ts`（每个 weight 只存 `{vw,vh,d}`；该包统一为单 path、`fill-rule:nonzero`、竖直翻转 `matrix(1 0 0 -1 0 vh)`，由渲染器套用）。改包后跑 `bun scripts/generate-extended-icons.mjs` 重新生成（生成文件已在 prettier / oxlint / eslint 忽略）。
+- **扩展图标包** = miuix `miuix-icons` 全集（156 icon × 5 weight = 780）。由 `scripts/generate-extended-icons.mjs` 从兄弟仓库 SVG（`../miuix/docs/public/icons/extended`）生成到 `src/icons/extended/icons.ts`（每个 weight 只存 `{vw,vh,d}`；该包统一为单 path、`fill-rule:nonzero`、竖直翻转 `matrix(1 0 0 -1 0 vh)`，由渲染器套用）。改包后跑 `bun scripts/generate-extended-icons.mjs` 重新生成（生成文件已在 prettier / oxlint / eslint 忽略）。
 - 用 `<MiuixIcon :icon weight>` 渲染（`icon` 传整支 `ExtendedIcon` 按 `weight` 取，默认 `regular`；或已解析的 weight 数据），**不为每个图标建组件**。
-- 扩展包作为**独立构建入口** `miuix-vue/icons`（按需 ~1.3MB）；核心包不含图标数据（`MiuixIcon` 只 `import type`，故 `miuix-vue.js` 仍 ~88KB）。
+- 扩展包作为**独立构建入口** `miuix-vue/icons`（按需 ~1.3MB）；核心包不含图标数据（`MiuixIcon` 只 `import type`，故 `miuix-vue.js` 仍 ~91KB）。
 
 ## 技术栈
 
 - Vue 3.5+、TypeScript、**Vite 8** library mode（Vite 8 的打包内核是 **Rolldown** —— 库配置用 `build.rolldownOptions`，**不是** `rollupOptions`）
+- **TypeScript 固定 `~6.0.3`**：`vue-tsc` 3.3.x 尚不支持 TS 7（会报 `ERR_PACKAGE_PATH_NOT_EXPORTED: typescript/lib/tsc`）。升 TS 前先确认 `vue-tsc` 已兼容，否则 `bun run type-check` 直接崩溃
 - **包管理器：Bun**（唯一）。禁止在脚本 / 文档 / workflow 里出现 `npm install` / `pnpm install` / `yarn`。Lockfile 是 `bun.lock`（Bun 1.3+ 文本格式）
 - motion-v（唯一动画库，不引入 GSAP / @vueuse/motion）
 - Sass（仅 token 文件 `src/theme/tokens.scss`）
-- **unplugin-dts** 生成 `.d.ts`（入口 `unplugin-dts/vite`）。它是 `vite-plugin-dts` 的下一代（v1 = vite-plugin-dts v5 的内核，多打包器通用）；配置项用 `bundleTypes` / `outDirs`，旧名 `rollupTypes` / `outDir` 已弃用
+- **unplugin-dts** 生成 `.d.ts`（入口 `unplugin-dts/vite`）。它是 `vite-plugin-dts` 的下一代（v1 = vite-plugin-dts v5 的内核，多打包器通用）；配置项用 `bundleTypes` / `outDirs`，旧名 `rollupTypes` / `outDir` 已弃用。输出目录与 `package.json` 类型入口的对应关系见「目录结构」——不要想当然按 `dist/index.d.ts` 配置
 - **不引入** Tailwind / UnoCSS / 任何 CSS-in-JS
 
 ## 添加 / 修改组件的工作流
@@ -160,7 +164,7 @@ bun scripts/generate-extended-icons.mjs    # 改图标包后重新生成
 | :--------- | :------------------------------------------------------ |
 | `feat`     | 新功能（新组件 / 新 prop / 新 slot）                    |
 | `fix`      | bug 修复                                                |
-| `docs`     | 仅文档（README / CLAUDE.md / 注释）                     |
+| `docs`     | 仅文档（README / AGENTS.md / 注释）                     |
 | `style`    | 不影响代码行为的格式化（缩进、空格、引号），**非 CSS**  |
 | `refactor` | 不改变外部行为的重构                                    |
 | `perf`     | 性能优化                                                |
@@ -182,7 +186,7 @@ bun scripts/generate-extended-icons.mjs    # 改图标包后重新生成
 feat(button): support loading slot
 feat(switch): add drag-triggered thumb scale spring
 fix(slider): correct magnetic snap threshold default
-docs: add CLAUDE.md project rules
+docs: add AGENTS.md project rules
 build: enable vite library mode
 refactor(theme): extract color tokens to scss
 perf(dialog): defer teleport mount until first open

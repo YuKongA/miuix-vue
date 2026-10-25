@@ -1,7 +1,7 @@
 // Copyright 2026, miuix-vue contributors
 // SPDX-License-Identifier: Apache-2.0
 //
-// miuix extended icon pack (155 icons × 5 weights), generated from the source
+// miuix extended icon pack (156 icons × 5 weights), generated from the source
 // SVGs by scripts/generate-extended-icons.mjs. Render with <MiuixIcon :icon>:
 //   import { MiuixIcon } from 'miuix-vue'
 //   import { Alarm } from 'miuix-vue/icons'

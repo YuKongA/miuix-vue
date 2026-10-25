@@ -12,7 +12,7 @@
 //   2. `icon` prop — extended-pack data (an ExtendedIcon picked by `weight`, or
 //      a resolved ExtendedIconWeightData). The renderer draws the path in its
 //      own viewBox with the pack's uniform vertical-flip transform + nonzero
-//      fill-rule, so the whole 155×5 pack works without 775 components.
+//      fill-rule, so the whole 156×5 pack works without 780 components.
 
 import { computed } from 'vue'
 import type {

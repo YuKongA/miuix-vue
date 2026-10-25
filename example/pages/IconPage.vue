@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// IconPage — the full miuix extended icon pack (155 icons × 5 weights).
+// IconPage — the full miuix extended icon pack (156 icons × 5 weights).
 // Mirrors miuix's IconPage: a searchable accordion list; each row shows the
 // Regular glyph and expands to compare Light / Normal / Regular / Medium /
 // Demibold side by side. One row open at a time.

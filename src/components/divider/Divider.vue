@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // Ported from miuix-ui/.../basic/Divider.kt (HorizontalDivider + VerticalDivider,
-// unified via `orientation` per CLAUDE.md rule #2).
+// unified via `orientation` per AGENTS.md rule #2).
 //
 // DividerDefaults: thickness 0.75dp, color = dividerLine.
 

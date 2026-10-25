@@ -362,7 +362,7 @@ function onPointerDown(event: PointerEvent): void {
     }
   } else {
     // Bare track: jump the closer thumb to the click, then drag from there
-    // (click-to-set, Web idiom per CLAUDE.md #2; miuix moves only on drag).
+    // (click-to-set, Web idiom per AGENTS.md #2; miuix moves only on drag).
     // Clicking directly on a thumb just grabs it (no jump) for fine-tuning.
     const diffStart = Math.abs(local - startThumbCenter.value)
     const diffEnd = Math.abs(local - endThumbCenter.value)

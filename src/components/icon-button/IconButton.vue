@@ -5,7 +5,7 @@
 // Ported from miuix-ui/.../basic/IconButton.kt.
 //
 // IconButtonDefaults: minWidth 40, minHeight 40, cornerRadius 40 (→ circle),
-// backgroundColor Unspecified (transparent). Per CLAUDE.md rule #2 these are
+// backgroundColor Unspecified (transparent). Per AGENTS.md rule #2 these are
 // fixed CSS / CSS-variable customization points, not per-instance props.
 // Clickable uses LocalIndication → the MiuixIndication alpha overlay
 // (onBackground; additive hover .06 / focus .08 / press .10 / hold-down .10;

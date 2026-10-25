@@ -21,7 +21,7 @@ interface Props {
   /** Visual press feedback. miuix PressFeedbackType. */
   pressFeedback?: MiuixCardPressFeedback
   // Background / content color are CSS-variable customization points
-  // (--m-card-color / --m-card-content-color), not props, per CLAUDE.md rule #2.
+  // (--m-card-color / --m-card-content-color), not props, per AGENTS.md rule #2.
   /** Draw the MiuixIndication alpha overlay on hover/press. */
   showIndication?: boolean
   /** Latch the press feedback on (e.g. while a long-press dialog is open). */

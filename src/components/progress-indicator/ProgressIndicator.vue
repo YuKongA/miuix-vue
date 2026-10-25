@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // Ported from miuix-ui/.../basic/ProgressIndicator.kt
-// (Linear / Circular / Infinite, unified via `type` per CLAUDE.md rule #2).
+// (Linear / Circular / Infinite, unified via `type` per AGENTS.md rule #2).
 //
 // Defaults: linear height 6; circular size 30 / stroke 4; infinite size 20 /
 //   stroke 2 / dot 2. fg primary, bg secondaryContainer (infinite: gray).

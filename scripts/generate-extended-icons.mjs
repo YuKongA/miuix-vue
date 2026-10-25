@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // Generates src/icons/extended/icons.ts from the miuix extended icon pack SVGs
-// (sibling repo, per CLAUDE.md: D:\GitHub\miuix\). The pack is 155 icons × 5
+// (sibling repo, per AGENTS.md: D:\GitHub\miuix\). The pack is 156 icons × 5
 // weights (Light/Normal/Regular/Medium/Demibold). Every SVG is a single path in
 // its own square viewBox, fill-rule nonzero, with a vertical-flip transform
 // matrix(1 0 0 -1 0 vh) — all uniform across the pack — so we store only

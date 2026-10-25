@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // Ported from miuix-ui/.../basic/Slider.kt (Slider + VerticalSlider, unified
-// here via `orientation` per Vue idiom — see CLAUDE.md rule #2).
+// here via `orientation` per Vue idiom — see AGENTS.md rule #2).
 //
 // Geometry (1:1 with Canvas math in SliderTrack):
 //   trackThickness = SliderDefaults.MinHeight = 28
@@ -25,7 +25,7 @@
 // Snap behavior:
 //   step > 0       → hard snap to step (HTML <input type=range> idiom).
 //                    miuix's `steps: Int` (count between endpoints) is
-//                    re-expressed as `step: number` (size) per CLAUDE.md #2.
+//                    re-expressed as `step: number` (size) per AGENTS.md #2.
 //   keyPoints set  → magnetic soft snap if within magnetThreshold (default 2%).
 //                    Source treats `keyPoints` and `steps` as independent; the
 //                    Vue port mirrors that — `step` wins over `keyPoints` for
@@ -380,7 +380,7 @@ function updateThumbHover(event: PointerEvent): void {
   hoveredThumb.value = Math.abs(pointer - thumbCenter.value) <= thumbHitRadius.value
 }
 
-// Click-to-set (Web idiom, CLAUDE.md #2): pointerdown jumps to the click, then
+// Click-to-set (Web idiom, AGENTS.md #2): pointerdown jumps to the click, then
 // drag follows. miuix moves only on drag; RangeSlider matches.
 function onPointerDown(event: PointerEvent): void {
   if (props.disabled) return

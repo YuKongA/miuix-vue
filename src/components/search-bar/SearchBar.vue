@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // Ported from miuix-ui/.../basic/SearchBar.kt (SearchBar + InputField), merged
-// into one Vue component (per CLAUDE.md rule #2).
+// into one Vue component (per AGENTS.md rule #2).
 //
 // Capsule input: bg surfaceContainerHigh, circle shape, min-height 45, leading
 // Search icon (start 16 / end 8, onSurfaceContainerHigh), input font 17 Medium,

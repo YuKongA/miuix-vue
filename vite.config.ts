@@ -35,7 +35,9 @@ export default defineConfig({
     lib: {
       entry: {
         'miuix-vue': fileURLToPath(new URL('./src/index.ts', import.meta.url)),
-        icons: fileURLToPath(new URL('./src/icons/extended/index.ts', import.meta.url)),
+        // Not `icons`: `dist/icons.js` would shadow `dist/icons/index.d.ts`
+        // when `dist/index.d.ts` imports './icons'.
+        'extended-icons': fileURLToPath(new URL('./src/icons/extended/index.ts', import.meta.url)),
       },
       fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'js' : 'cjs'}`,
       formats: ['es', 'cjs'],
